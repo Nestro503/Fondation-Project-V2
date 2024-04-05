@@ -3,7 +3,7 @@ import math
 from queue import PriorityQueue
 
 # Load the image
-image_path = "images/test.png"  # Spécifiez le chemin de votre image
+image_path = "images/maptest.png"  # Spécifiez le chemin de votre image
 IMAGE = pygame.image.load(image_path)
 
 # Redimensionnez l'image pour correspondre à la taille de l'écran
@@ -47,10 +47,10 @@ class Spot:
         return self.color == BLACK
 
     def is_start(self):
-        return self.color == ORANGE
+        return self.color == RED
 
     def is_end(self):
-        return self.color == TURQUOISE
+        return self.color == BLUE
 
     def reset(self):
         self.color = WHITE
@@ -97,9 +97,9 @@ class Spot:
 def h(p1, p2):
     x1, y1 = p1
     x2, y2 = p2
-    #return abs(x1 - x2) + abs(y1 - y2)                      #Manhattan
+    return abs(x1 - x2) + abs(y1 - y2)                      #Manhattan
     #return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)       #Euclidienne
-    return max(abs(x1 - x2), abs(y1 - y2))                  #Tchebychev
+    #return max(abs(x1 - x2), abs(y1 - y2))                  #Tchebychev
 
 
 
@@ -108,6 +108,7 @@ def reconstruct_path(came_from, current, draw):
         current = came_from[current]
         current.make_path()
         draw()
+
 
 def algorithm(draw, grid, start, end):
     count = 0
@@ -118,23 +119,20 @@ def algorithm(draw, grid, start, end):
     g_score[start] = 0
     f_score = {spot: float("inf") for row in grid for spot in row}
     f_score[start] = h(start.get_pos(), end.get_pos())
+
     open_set_hash = {start}
 
     while not open_set.empty():
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-
         current = open_set.get()[2]
         open_set_hash.remove(current)
 
         if current == end:
-            reconstruct_path(came_from, end, draw)
-            end.make_end()
+            # Reconstruire le chemin ici
             return True
 
         for neighbor in current.neighbors:
             temp_g_score = g_score[current] + 1
+
             if temp_g_score < g_score[neighbor]:
                 came_from[neighbor] = current
                 g_score[neighbor] = temp_g_score
@@ -189,62 +187,71 @@ def get_clicked_pos(pos, rows, width):
     row = y // gap
     col = x // gap
     return row, col
-
+def place_elements_from_image(image, grid, start_color, end_color):
+    """
+    Analyse l'image et place automatiquement les éléments sur la grille.
+    :param image: L'image chargée avec pygame.
+    :param grid: La grille de spots.
+    :param start_color: La couleur représentant le point de départ.
+    :param end_color: La couleur représentant le point d'arrivée.
+    """
+    rows = len(grid)
+    width = grid[0][0].width
+    img_width, img_height = image.get_size()
+    for i in range(rows):
+        for j in range(rows):
+            # Convertir la position de la grille en position de l'image
+            img_x = int((j / rows) * img_width)
+            img_y = int((i / rows) * img_height)
+            pixel_color = image.get_at((img_x, img_y))
+            if pixel_color == BLACK:  # Barrière
+                grid[i][j].make_barrier()
+            elif pixel_color == RED:  # Départ
+                global start
+                start = grid[i][j]
+                start.make_start()
+            elif pixel_color == BLUE:  # Arrivée
+                global end
+                end = grid[i][j]
+                end.make_end()
 def main():
-    pygame.init()  # Initialisez Pygame
+    global start, end
 
-    # Calculez le nombre de rangées en fonction du ratio entre la largeur et la hauteur de l'image
-    ROW_SCALE_FACTOR = 0.01 * 10  # Facteur d'échelle pour ajuster le nombre de rangées
-    ROWS = int(HEIGHT * ROW_SCALE_FACTOR)
-
+    ROWS = 25
     grid = make_grid(ROWS, WIDTH)
 
     start = None
     end = None
 
-    WIN = pygame.display.set_mode((WIDTH, HEIGHT))  # Définissez la surface d'affichage
-    pygame.display.set_caption("A* Path Finding Algorithm")  # Définissez le titre de la fenêtre
+    WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("A* Path Finding Algorithm")
+
+    place_elements_from_image(IMAGE, grid, ORANGE, BLUE)
 
     run = True
+    started = False
     while run:
         draw(WIN, grid, ROWS, WIDTH)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
 
-            if pygame.mouse.get_pressed()[0]: # LEFT
-                pos = pygame.mouse.get_pos()
-                row, col = get_clicked_pos(pos, ROWS, WIDTH)
-                spot = grid[row][col]
-                if not start and spot != end:
-                    start = spot
-                    start.make_start()
-                elif not end and spot != start:
-                    end = spot
-                    end.make_end()
-                elif spot != end and spot != start:
-                    spot.make_barrier()
-
-            elif pygame.mouse.get_pressed()[2]: # RIGHT
-                pos = pygame.mouse.get_pos()
-                row, col = get_clicked_pos(pos, ROWS, WIDTH)
-                spot = grid[row][col]
-                spot.reset()
-                if spot == start:
-                    start = None
-                elif spot == end:
-                    end = None
+            if started:
+                continue
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and start and end:
                     for row in grid:
                         for spot in row:
                             spot.update_neighbors(grid)
+
                     algorithm(lambda: draw(WIN, grid, ROWS, WIDTH), grid, start, end)
+
                 if event.key == pygame.K_c:
                     start = None
                     end = None
                     grid = make_grid(ROWS, WIDTH)
+                    place_elements_from_image(IMAGE, grid, ORANGE, BLUE)
 
     pygame.quit()
 
