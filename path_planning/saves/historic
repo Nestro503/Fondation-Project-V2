@@ -4,7 +4,7 @@ HISTORIC OF SAVES
 - save0 : code of the video (https://www.youtube.com/watch?v=JtiK0DOeI4A&list=PLtW1aNj6x0Cu7f80s1FXw2x8WxVC7qy0s&index=6)
 - save1 : modifications effectuées pour que ca marche
 - save2 : modifiations ajoutées pour pouvoir faire de la lecture d'image + ajout heuristique différentes
-- save3 : add reconnaissance d'image
+- save3 : add reconnaissance d'image (obstacles + depart/arrivée)
 
 
 A FAIRE

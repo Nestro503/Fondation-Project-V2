@@ -98,8 +98,8 @@ def h(p1, p2):
     x1, y1 = p1
     x2, y2 = p2
     #return abs(x1 - x2) + abs(y1 - y2)                      #Manhattan
-    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)       #Euclidienne
-    #return max(abs(x1 - x2), abs(y1 - y2))                  #Tchebychev
+    #return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)       #Euclidienne
+    return max(abs(x1 - x2), abs(y1 - y2))                  #Tchebychev
 
 
 
@@ -194,7 +194,7 @@ def main():
     pygame.init()  # Initialisez Pygame
 
     # Calculez le nombre de rangées en fonction du ratio entre la largeur et la hauteur de l'image
-    ROW_SCALE_FACTOR = 0.01 * 5  # Facteur d'échelle pour ajuster le nombre de rangées
+    ROW_SCALE_FACTOR = 0.01 * 10  # Facteur d'échelle pour ajuster le nombre de rangées
     ROWS = int(HEIGHT * ROW_SCALE_FACTOR)
 
     grid = make_grid(ROWS, WIDTH)
