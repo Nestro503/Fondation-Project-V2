@@ -1,0 +1,97 @@
+import math
+import matplotlib.pyplot as plt
+
+# Fonction pour calculer la distance entre deux points (x1, y1) et (x2, y2)
+def distance(x1, y1, x2, y2):
+    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+# Fonction principale pour créer la trajectoire en regroupant les points proches
+def create_grouped_trajectory(points):
+    nodes = []
+    current_node = points[0]
+    nodes.append({
+        "node": 1,
+        "coordinates": current_node,
+        "distance": 0
+    })
+
+    for i in range(1, len(points)):
+        x1, y1 = current_node
+        x2, y2 = points[i]
+
+        # Calculer la distance entre le point actuel et le prochain point
+        dist = distance(x1, y1, x2, y2)
+
+        if dist > 1.0:  # Seuil de distance pour regrouper les points
+            # Ajouter le nouveau point comme un nouveau nœud
+            current_node = (x2, y2)
+            nodes.append({
+                "node": len(nodes) + 1,
+                "coordinates": current_node,
+                "distance": 0
+            })
+        else:
+            # Fusionner le point avec le dernier nœud s'il est proche
+            nodes[-1]["coordinates"] = (x2, y2)
+            nodes[-1]["distance"] += dist  # Ajouter la distance au dernier nœud
+
+    return nodes
+
+# Fonction pour afficher les résultats dans la console
+def print_trajectory(nodes):
+    for node in nodes:
+        print(f"Noeud {node['node']} : {node['coordinates']}")
+        print(f"Distance = {node['distance']:.2f}")
+        if node['node'] != len(nodes):  # Ne pas afficher la dernière ligne pour le dernier nœud
+            print("---")
+
+# Fonction pour afficher la trajectoire totale avec départ, arrivée, arêtes et sommets
+def display_trajectory(nodes):
+    print("Trajectoire totale:")
+    print(f"Départ: {nodes[0]['coordinates']}")
+
+    for i in range(len(nodes) - 1):
+        print(
+            f"Arête {i + 1}: {nodes[i]['coordinates']} --> {nodes[i + 1]['coordinates']} (Distance = {nodes[i]['distance']:.2f})")
+
+    print(f"Arrivée: {nodes[-1]['coordinates']}")
+
+# Fonction pour tracer graphiquement la trajectoire
+def plot_trajectory(nodes):
+    x_coords = [node['coordinates'][0] for node in nodes]
+    y_coords = [node['coordinates'][1] for node in nodes]
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(x_coords, y_coords, marker='o', linestyle='-', color='b')
+    plt.title('Trajectoire')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.grid(True)
+
+    for i, node in enumerate(nodes):
+        plt.text(node['coordinates'][0], node['coordinates'][1], f"Noeud {node['node']}", fontsize=9, ha='right')
+
+    plt.show()
+
+# Exemple d'utilisation
+if __name__ == "__main__":
+    path_coordinates = [
+        (24, 15), (23, 15), (22, 15), (21, 15), (20, 15),
+        (19, 15), (18, 15), (17, 15), (16, 15), (15, 15),
+        (14, 15), (13, 15), (12, 15), (11, 15), (10, 15),
+        (9, 15), (8, 15), (7, 15), (6, 15), (5, 15),
+        (5, 14), (5, 13), (5, 12), (5, 11), (5, 10), (5, 9)
+    ]
+
+    # Créer la trajectoire en regroupant les points proches
+    nodes = create_grouped_trajectory(path_coordinates)
+
+    # Affichage des résultats dans la console
+    print_trajectory(nodes)
+    print()  # Ligne vide pour la lisibilité
+
+    # Affichage de la trajectoire totale
+    display_trajectory(nodes)
+
+    # Tracer graphiquement la trajectoire
+    plot_trajectory(nodes)
