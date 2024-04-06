@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import scipy as scipy
+pip install scipy
 from scipy.optimize import curve_fit
 
 def fit_serpentine_curve(points):
