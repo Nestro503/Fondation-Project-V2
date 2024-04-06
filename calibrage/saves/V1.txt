@@ -1,0 +1,14 @@
+    assert img is not None, "file could not be read, check with os.path.exists()"
+    rows, cols, ch = img.shape
+
+
+
+
+    pts1 = np.float32([[x_aruco_0, y_aruco_0],[x_aruco_1, y_aruco_1],[x_aruco_3, y_aruco_3],[x_aruco_2, y_aruco_2]])
+    pts2 = np.float32([[0, 0], [1700, 0], [0, 900], [1700, 900]])
+
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+
+    dst = cv2.warpPerspective(img, M, (1700, 900))
+
+    cv2.imshow("Original Image", dst)
