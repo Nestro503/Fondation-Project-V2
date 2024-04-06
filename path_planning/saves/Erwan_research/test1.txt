@@ -1,3 +1,8 @@
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Code permettant de determiner une trajectoire composée de distances et d'angles (pas OP encore)
+# ----------------------------------------------------------------------------------------------------------------------
+
 import pygame
 import math
 from queue import PriorityQueue

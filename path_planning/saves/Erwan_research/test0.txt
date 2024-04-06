@@ -1,3 +1,8 @@
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Code permettant d'afficher les coordonnées (de cadrillage) des points du chemin le plus court
+# ----------------------------------------------------------------------------------------------------------------------
+
 import pygame
 import math
 from queue import PriorityQueue
@@ -98,43 +103,50 @@ def h(p1, p2):
     x2, y2 = p2
     return abs(x1 - x2) + abs(y1 - y2)  # Manhattan distance
 
-def reconstruct_path(came_from, current):
+def reconstruct_path(came_from, current, draw):
     path = []
     while current in came_from:
-        prev = came_from[current]
-        dist = math.sqrt((current[0] - prev[0]) ** 2 + (current[1] - prev[1]) ** 2)
-        angle = math.degrees(math.atan2(current[1] - prev[1], current[0] - prev[0]))
-        path.append((current, dist, angle))
-        current = prev
-    path.reverse()
+        current = came_from[current]
+        current.make_path()
+        path.append(current.get_pos())
+        draw()
     return path
 
 def algorithm(draw, grid, start, end):
+    count = 0
     open_set = PriorityQueue()
-    open_set.put((0, start))
+    open_set.put((0, count, start))
     came_from = {}
-    g_score = {spot.get_pos(): float("inf") for row in grid for spot in row}
-    g_score[start.get_pos()] = 0
+    g_score = {spot: float("inf") for row in grid for spot in row}
+    g_score[start] = 0
+    f_score = {spot: float("inf") for row in grid for spot in row}
+    f_score[start] = h(start.get_pos(), end.get_pos())
+    open_set_hash = {start}
 
     while not open_set.empty():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
 
-        current = open_set.get()[1]
+        current = open_set.get()[2]
+        open_set_hash.remove(current)
 
         if current == end:
-            path = reconstruct_path(came_from, end.get_pos())
+            path = reconstruct_path(came_from, end, draw)
+            end.make_end()
             return path
 
         for neighbor in current.neighbors:
-            temp_g_score = g_score[current.get_pos()] + 1
-            if temp_g_score < g_score[neighbor.get_pos()]:
-                came_from[neighbor.get_pos()] = current.get_pos()
-                g_score[neighbor.get_pos()] = temp_g_score
-                f_score = temp_g_score + h(neighbor.get_pos(), end.get_pos())
-                open_set.put((f_score, neighbor))
-                neighbor.make_open()
+            temp_g_score = g_score[current] + 1
+            if temp_g_score < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = temp_g_score
+                f_score[neighbor] = temp_g_score + h(neighbor.get_pos(), end.get_pos())
+                if neighbor not in open_set_hash:
+                    count += 1
+                    open_set.put((f_score[neighbor], count, neighbor))
+                    open_set_hash.add(neighbor)
+                    neighbor.make_open()
 
         draw()
 
@@ -224,9 +236,9 @@ def main():
                         for spot in row:
                             spot.update_neighbors(grid)
                     path = algorithm(lambda: draw(WIN, grid, ROWS, WIDTH), grid, start, end)
-                    print("Path Trajectory:")
-                    for point in path:
-                        print(f"Point: {point[0]}, Distance: {point[1]}, Angle: {point[2]}")
+                    print("Path Coordinates:")
+                    for coord in path:
+                        print(f"({coord[1]}, {coord[0]})")  # Imprimer les coordonnées du chemin trouvé
                 if event.key == pygame.K_c:
                     start = None
                     end = None
