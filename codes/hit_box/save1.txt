@@ -1,0 +1,63 @@
+import numpy as np
+import cv2
+
+# Configuration du dictionnaire ArUco
+ARUCO_DICT = {
+    "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
+}
+aruco_type = "DICT_ARUCO_ORIGINAL"
+arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
+arucoParams = cv2.aruco.DetectorParameters()
+
+def classify_and_draw_arucos(corners, ids, image, area_threshold=5000, margin=10):
+    if ids is not None and len(corners) > 0:
+        ids = ids.flatten()
+        for i, corner in enumerate(corners):
+            poly = corner.reshape(-1, 2).astype(np.int32)
+            if poly.shape[0] > 0:
+                cv2.polylines(image, [poly], True, (255, 0, 255), 5)
+                area = cv2.contourArea(poly)
+                center = poly.mean(axis=0).astype(int)
+
+                # Dessin d'une hitbox autour de l'Aruco
+                x, y, w, h = cv2.boundingRect(poly)
+                cv2.rectangle(image, (x - margin, y - margin), (x + w + margin, y + h + margin), (0, 255, 0), 2)
+
+                # Ajout de cercles colorés sur chaque coin
+                colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]  # Rouge, Vert, Bleu, Jaune
+                for point, color in zip(poly, colors):
+                    cv2.circle(image, tuple(point), 5, color, -1)  # Dessine un cercle coloré sur chaque coin
+
+                # Dessin du centre et de la flèche indiquant la direction
+                cv2.circle(image, tuple(center), 10, (0, 255, 255), -1)  # Jaune pour le centre
+                # Flèche entre le haut gauche (poly[0]) et le haut droit (poly[1])
+                cv2.arrowedLine(image, tuple(poly[0]), tuple(poly[1]), (255, 0, 0), 3, tipLength=0.5)
+                cv2.putText(image, "Avancer", ((poly[0][0]+poly[1][0])//2, (poly[0][1]+poly[1][1])//2 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+    else:
+        print("Aucun ArUco détecté ou données de coins invalides.")
+    return image
+
+# Initialisation de la capture vidéo
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+while cap.isOpened():
+    ret, img = cap.read()
+    if not ret:
+        print("Erreur de lecture vidéo, fin du programme.")
+        break
+
+    # Détection des marqueurs ArUco dans l'image
+    corners, ids, _ = cv2.aruco.detectMarkers(img, arucoDict, parameters=arucoParams)
+
+    # Classification et dessin des ArUcos détectés
+    img_with_arucos = classify_and_draw_arucos(corners, ids, img)
+
+    # Affichage de l'image traitée
+    cv2.imshow("Aruco Detection", img_with_arucos)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
