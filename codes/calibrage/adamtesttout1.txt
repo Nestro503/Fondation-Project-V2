@@ -1,0 +1,290 @@
+import numpy as np
+import time
+import cv2
+
+ARUCO_DICT = {
+    "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
+}
+
+# Constantes
+DISTANCE_COIN_ARUCO_X_MM = 2940
+DISTANCE_COIN_Y_MM = 1940
+
+'''
+# Function to calculate mm_nbr_pixel and pixel_nbr_mm
+def calculate_pixel_distance(corners, ids):
+    # Initialize variables to default values to ensure they are bound even if the if condition is not met
+    pixel_distance_x = pixel_distance_y = 0
+    mm_nbr_pixel_x = mm_nbr_pixel_y = pixel_nbr_mm_x = pixel_nbr_mm_y = 0
+    x_aruco_0 = y_aruco_0 = x_aruco_1 = y_aruco_1 = 0
+    x_aruco_2 = y_aruco_2 = x_aruco_3 = y_aruco_3 = 0
+
+    if len(corners) > 1:
+        index_aruco_0 = np.where(ids == 0)[0]
+        index_aruco_1 = np.where(ids == 1)[0]
+        index_aruco_2 = np.where(ids == 2)[0]
+        index_aruco_3 = np.where(ids == 3)[0]
+
+        # Initialize default values
+        x_aruco_0, y_aruco_0 = 0, 0
+        x_aruco_1, y_aruco_1 = 0, 0
+        x_aruco_2, y_aruco_2 = 0, 0
+        x_aruco_3, y_aruco_3 = 0, 0
+
+        # Check if marker 0 is detected
+        if index_aruco_0.size > 0:
+            x_aruco_0 = corners[index_aruco_0[0]][0][0][0]  # Use the top-left corner
+            y_aruco_0 = corners[index_aruco_0[0]][0][0][1]
+            print("x_aruco_0:{}, y_aruco_0:{}".format(x_aruco_0, y_aruco_0))
+
+        # Check if marker 1 is detected
+        if index_aruco_1.size > 0:
+            x_aruco_1 = corners[index_aruco_1[0]][0][1][0]  # Use the top-right corner
+            y_aruco_1 = corners[index_aruco_1[0]][0][1][1]
+            print("x_aruco_1:{}, y_aruco_1:{}".format(x_aruco_1, y_aruco_1))
+
+        # Check if marker 2 is detected
+        if index_aruco_2.size > 0:
+            x_aruco_2 = corners[index_aruco_2[0]][0][2][0]  # Use the bottom-right corner
+            y_aruco_2 = corners[index_aruco_2[0]][0][2][1]
+            print("x_aruco_2:{}, y_aruco_2:{}".format(x_aruco_2, y_aruco_2))
+
+        # Check if marker 3 is detected
+        if index_aruco_3.size > 0:
+            x_aruco_3 = corners[index_aruco_3[0]][0][3][0]  # Use the bottom-left corner
+            y_aruco_3 = corners[index_aruco_3[0]][0][3][1]
+            print("x_aruco_3:{}, y_aruco_3:{}".format(x_aruco_3, y_aruco_3))
+
+        # Calculate the pixel distance in both x and y directions
+        pixel_distance_x = abs(x_aruco_2 - x_aruco_3)
+        pixel_distance_y = abs(y_aruco_2 - y_aruco_1)
+
+        # Check if pixel_distance_x is zero to avoid division by zero
+        if pixel_distance_x == 0:
+            print("[Inference] Warning: pixel_distance_x is zero. Cannot calculate mm_nbr_pixel_x and pixel_nbr_mm_x.")
+            return None, None, None, None, None
+        if pixel_distance_y == 0:
+            print("[Inference] Warning: pixel_distance_y is zero. Cannot calculate mm_nbr_pixel_y and pixel_nbr_mm_y.")
+            return None, None, None, None, None
+
+        # Calculate mm_nbr_pixel and pixel_nbr_mm for both x and y directions
+        mm_nbr_pixel_x = float(pixel_distance_x) / DISTANCE_COIN_ARUCO_X_MM
+        pixel_nbr_mm_x = float(DISTANCE_COIN_ARUCO_X_MM) / pixel_distance_x
+        mm_nbr_pixel_y = float(pixel_distance_y) / DISTANCE_COIN_Y_MM
+        pixel_nbr_mm_y = float(DISTANCE_COIN_Y_MM) / pixel_distance_y
+
+        print(
+            "[Inference] pixeldistance_x: {:.2f}, mm_nbr_pixel_x: {:.2f}, pixel_nbr_mm_x: {:.2f}".format(
+                pixel_distance_x,
+                mm_nbr_pixel_x,
+                pixel_nbr_mm_x))
+        print(
+            "[Inference] pixeldistance_y: {:.2f}, mm_nbr_pixel_y: {:.2f}, pixel_nbr_mm_y: {:.2f}".format(
+                pixel_distance_y,
+                mm_nbr_pixel_y,
+                pixel_nbr_mm_y))
+
+    return pixel_distance_x, mm_nbr_pixel_x, pixel_nbr_mm_x, pixel_distance_y, mm_nbr_pixel_y, pixel_nbr_mm_y, x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3
+'''
+
+
+def calculate_pixel_distance(corners, ids):
+    # Initialize all variables at the beginning of the function to ensure they have some default value.
+    pixel_distance_x = pixel_distance_y = 0
+    mm_nbr_pixel_x = mm_nbr_pixel_y = pixel_nbr_mm_x = pixel_nbr_mm_y = 0
+    x_aruco_0 = y_aruco_0 = x_aruco_1 = y_aruco_1 = 0
+    x_aruco_2 = y_aruco_2 = x_aruco_3 = y_aruco_3 = 0
+
+    # Early return if there are not enough corners to process
+    if len(corners) <= 1:
+        # Return None or 0 for all values indicating the function cannot proceed with calculations
+        return (None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+
+    # Processing starts here because there are more than 1 corner
+    index_aruco_0 = np.where(ids == 0)[0]
+    index_aruco_1 = np.where(ids == 1)[0]
+    index_aruco_2 = np.where(ids == 2)[0]
+    index_aruco_3 = np.where(ids == 3)[0]
+
+    if index_aruco_0.size > 0:
+        x_aruco_0, y_aruco_0 = corners[index_aruco_0[0]][0][0][0], corners[index_aruco_0[0]][0][0][1]
+    if index_aruco_1.size > 0:
+        x_aruco_1, y_aruco_1 = corners[index_aruco_1[0]][0][1][0], corners[index_aruco_1[0]][0][1][1]
+    if index_aruco_2.size > 0:
+        x_aruco_2, y_aruco_2 = corners[index_aruco_2[0]][0][2][0], corners[index_aruco_2[0]][0][2][1]
+    if index_aruco_3.size > 0:
+        x_aruco_3, y_aruco_3 = corners[index_aruco_3[0]][0][3][0], corners[index_aruco_3[0]][0][3][1]
+
+    # Calculate distances and ratios
+    # Ensure there's a check to prevent division by zero
+    if x_aruco_2 and x_aruco_3 and y_aruco_2 and y_aruco_3:
+        pixel_distance_x = abs(x_aruco_2 - x_aruco_3)
+        pixel_distance_y = abs(y_aruco_2 - y_aruco_3)
+
+        if pixel_distance_x == 0 or pixel_distance_y == 0:
+            # Handle the case where division by zero would occur
+            return (None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+
+        mm_nbr_pixel_x = float(pixel_distance_x) / DISTANCE_COIN_ARUCO_X_MM
+        pixel_nbr_mm_x = 1 / mm_nbr_pixel_x if mm_nbr_pixel_x else None
+        mm_nbr_pixel_y = float(pixel_distance_y) / DISTANCE_COIN_Y_MM
+        pixel_nbr_mm_y = 1 / mm_nbr_pixel_y if mm_nbr_pixel_y else None
+    else:
+        # If we can't calculate distances because markers are not detected, return Nones or zeros
+        return (None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+
+    return pixel_distance_x, mm_nbr_pixel_x, pixel_nbr_mm_x, pixel_distance_y, mm_nbr_pixel_y, pixel_nbr_mm_y, x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3
+
+
+
+def coordrobot(corners, ids):
+    x_robot = y_robot = None  # Initialize with None to handle cases where the marker isn't detected
+    if len(corners) < 1:
+        return None, None  # Early return if there are no corners to process
+    index_robot = np.where(ids == 137)[0]
+    if index_robot.size > 0:
+        # Calculate the center of the ArUco marker
+        marker_corners = corners[index_robot[0]][0]
+        x_robot = np.mean(marker_corners[:, 0])
+        y_robot = np.mean(marker_corners[:, 1])
+    return x_robot, y_robot
+
+
+# Function to display ArUco markers and calibration circles
+def aruco_display(corners, ids, image):
+    if len(corners) > 0:
+        ids = ids.flatten()
+
+        '''
+        pixel_distance_x, mm_nbr_pixel_x, pixel_nbr_mm_x, pixel_distance_y, mm_nbr_pixel_y, pixel_nbr_mm_y, x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = calculate_pixel_distance(
+            corners, ids)
+
+        if pixel_distance_x is not None and pixel_distance_y is not None:
+            '''
+        for (markerCorner, markerID) in zip(corners, ids):
+            corners = markerCorner.reshape((4, 2))
+
+            (topLeft, topRight, bottomRight, bottomLeft) = corners
+
+            topRight = (int(topRight[0]), int(topRight[1]))
+            bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
+            bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
+            topLeft = (int(topLeft[0]), int(topLeft[1]))
+
+            cv2.line(image, topLeft, topRight, (0, 255, 0), 2)
+            cv2.line(image, topRight, bottomRight, (0, 255, 0), 2)
+            cv2.line(image, bottomRight, bottomLeft, (0, 255, 0), 2)
+            cv2.line(image, bottomLeft, topLeft, (0, 255, 0), 2)
+
+            cX = int((topLeft[0] + bottomRight[0]) / 2.0)
+            cY = int((topLeft[1] + bottomRight[1]) / 2.0)
+
+            # Map ArUco marker coordinates to game card coordinates
+            if markerID == 0:
+                mapped_coordinates = (topLeft[0], topLeft[1])
+                cv2.circle(image, mapped_coordinates, 4, (0, 0, 255), -1)
+            elif markerID == 1:
+                mapped_coordinates = (topRight[0], topRight[1])
+                cv2.circle(image, mapped_coordinates, 4, (0, 0, 255), -1)
+            elif markerID == 2:
+                mapped_coordinates = (bottomRight[0], bottomRight[1])
+                cv2.circle(image, mapped_coordinates, 4, (0, 0, 255), -1)
+            elif markerID == 3:
+                mapped_coordinates = (bottomLeft[0], bottomLeft[1])
+                cv2.circle(image, mapped_coordinates, 4, (0, 0, 255), -1)
+            else:
+                mapped_coordinates = (cX, cY)
+                cv2.circle(image, (cX, cY), 4, (0, 0, 255), -1)
+
+            cv2.putText(image, "ID: {}".format(markerID), (topLeft[0], topLeft[1] - 10), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5, (0, 255, 0), 2)
+
+            # Display mapped coordinates on the image
+            cv2.putText(image, "Mapped: ({},{})".format(mapped_coordinates[0], mapped_coordinates[1]),
+                        (topLeft[0], topLeft[1] - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            # Print mapped coordinates in the console
+            print("[Inference] ArUco marker ID: {}, Mapped Coordinates: {}".format(markerID, mapped_coordinates))
+
+    return image
+
+
+aruco_type = "DICT_ARUCO_ORIGINAL"
+
+arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
+
+arucoParams = cv2.aruco.DetectorParameters()
+
+cap = cv2.VideoCapture("./calibrage/video/mapvideo.mp4")
+
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+while cap.isOpened():
+
+    ret, img = cap.read()
+
+    h, w, _ = img.shape
+    print("Lecture d'image réussie. Shape: {}".format((h, w)))
+
+    width = 1200
+    height = int(width * (h / w))
+    img = cv2.resize(img, (width, height), interpolation=cv2.INTER_CUBIC)
+
+    detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
+
+    corners, ids, rejected = detector.detectMarkers(img)
+
+    detected_markers = aruco_display(corners, ids, img)
+
+    x_robot, y_robot = coordrobot(corners, ids)
+
+
+    # Perform the conversion and print results
+    pixel_distance_x, mm_nbr_pixel_x, pixel_nbr_mm_x, pixel_distance_y, mm_nbr_pixel_y, pixel_nbr_mm_y, x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = calculate_pixel_distance(
+        corners, ids)
+
+    pts1 = np.float32([[x_aruco_0, y_aruco_0],[x_aruco_1, y_aruco_1],[x_aruco_3, y_aruco_3],[x_aruco_2, y_aruco_2]])
+    pts2 = np.float32([[0, 0], [1700, 0], [0, 900], [1700, 900]])
+
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+
+    dst = cv2.warpPerspective(img, M, (1700, 900))
+
+    cv2.imshow("Image recadr", dst)
+
+
+    '''
+    if pixel_distance_x is not None and pixel_distance_y is not None:
+        print(
+            "[Inference] pixeldistance_x: {:.2f}, mm_nbr_pixel_x: {:.2f}, pixel_nbr_mm_x: {:.2f}".format(
+                pixel_distance_x,
+                mm_nbr_pixel_x,
+                pixel_nbr_mm_x))
+        print(
+            "[Inference] pixeldistance_y: {:.2f}, mm_nbr_pixel_y: {:.2f}, pixel_nbr_mm_y: {:.2f}".format(
+                pixel_distance_y,
+                mm_nbr_pixel_y,
+                pixel_nbr_mm_y))
+
+    if x_robot is not None and y_robot is not None:
+        print(
+            "[Inferenceeeee] x_robot: {:.2f}, y_robot: {:.2f}".format(x_robot,y_robot))
+
+    # Check if coordinates are not None and draw the circle
+    if x_robot is not None and y_robot is not None:
+        cv2.circle(img, (int(x_robot), int(y_robot)), 100, (234,	158,	236), 3)
+    else:
+        print("ArUco marker 137 not detected.")
+    '''
+
+
+
+    cv2.imshow("Original Image", detected_markers)
+
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord("q"):
+        break
+
+cv2.destroyAllWindows()
+cap.release()
