@@ -390,8 +390,8 @@ while cap.isOpened():
 
 
 
-    
-    
+
+
     # Définir une tolérance pour la plage de couleur rouge autour du pixel de référence
     tolerance = 25  # Tolérance pour le rgb
 
@@ -428,7 +428,7 @@ while cap.isOpened():
     valeur_rouge = hsv_pixel_rouge[2]
 
 
-    # Bornes basées sur la teinte, la saturation, et la valeur du pixel rouge 
+    # Bornes basées sur la teinte, la saturation, et la valeur du pixel rouge
     rouge_lower_hsv = np.array([max(teinte_rouge - tolerance_hue, 0), max(saturation_rouge - tolerance_sat_val, 100), max(valeur_rouge - tolerance_sat_val, 100)])
     rouge_upper_hsv = np.array([min(teinte_rouge + tolerance_hue, 180), min(saturation_rouge + tolerance_sat_val, 255), min(valeur_rouge + tolerance_sat_val, 255)])
 
