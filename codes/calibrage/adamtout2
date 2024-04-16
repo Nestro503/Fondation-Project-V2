@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import cv2
+import cv2.aruco as aruco
 
 ARUCO_DICT = {
     "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
@@ -290,33 +291,49 @@ def cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_
 
 
 
+
+# Mettre à 0 pour video, 1 pour photos
+TEST = 0
+
+
 aruco_type = "DICT_ARUCO_ORIGINAL"
 
 arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
 
 arucoParams = cv2.aruco.DetectorParameters()
 
-# cap = cv2.VideoCapture("./Images/mapvideoframe.jpg")
-
-cap = cv2.VideoCapture("./Videos/mapvideo.mp4")
-
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
+if TEST != 1:
+    cap = cv2.VideoCapture("./Videos/mapvideo.mp4")
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
 
 
 
-while cap.isOpened():
+nomImages = ("./Images/mapframevideo.jpg", "./Images/map3adam.jpg", "./Images/map1.jpg", )
+nbImages = len(nomImages)
 
-    ret, img = cap.read()
+img = cv2.imread(nomImages[0])
+
+cpt = 0
+
+while True:
+    if TEST == 0:
+        ret, img = cap.read()
+    elif TEST == 1:
+        img = cv2.imread(nomImages[cpt])
+        if cv2.waitKey(1) & 0xFF == ord('p'):
+            cpt += 1
+            if cpt == nbImages:
+                cpt = 0
 
     h, w, _ = img.shape
     print("Lecture d'image réussie. Shape: {}".format((h, w)))
 
-    '''
-    width = 1920
-    height = int(width * (h / w))
+
+    width = IMAGE_LONGUEUR
+    height = IMAGE_LARGEUR
     img = cv2.resize(img, (width, height), interpolation=cv2.INTER_CUBIC)
-    '''
+
 
 
 
@@ -446,15 +463,9 @@ while cap.isOpened():
 
 
 
-
-
-
-
-
-
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord("q"):
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+if TEST != 1:
+    cap.release()
 cv2.destroyAllWindows()
-cap.release()
