@@ -8,4 +8,4 @@ V0 : version de base                                                            
 V1 : 3 heuristiques en simultanées sur le meme écran                                        // OK
 V2 : 3 heuristiques en simultanées sur des écrans simultanés                                // Don't work
 V3 : retour des caractéristiques de chaques H                                               // OK
-V4 : selection de l'H qui a le plus grand potentiel dans la situation actuelle              // Don't work
+V4 : selection de l'H qui a le plus grand potentiel dans la situation actuelle              // OK
