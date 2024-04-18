@@ -1,0 +1,3 @@
+
+Ce dossier contient tous les codes qui ont était nécessaire pour l'élaboration :
+DE LA CONVERSION D'UNE TRAJECTOIRE EN REQUETES A ENVOYER POUR LE ROBOT
