@@ -513,8 +513,13 @@ while True:
     for i in range(len(circle_centers)):
         cv2.circle(img_recadre_hsv_copy, (circle_centers[i][0], circle_centers[i][1] - 20), circle_radius, (mean_hsv_values[i][0],mean_hsv_values[i][1], mean_hsv_values[i][2]), -1)  # Draw filled circle
 
-    cv2.imshow("Image Recadre HSV Copy avec cercle couleurs", img_recadre_hsv_copy)
+    #cv2.imshow("Image Recadre HSV Copy avec cercle couleurs", img_recadre_hsv_copy)
 
+    top_row = cv2.hconcat([display_mask_blanc, display_mask_cyan])
+    bottom_row = cv2.hconcat([display_mask_rouge, display_mask_gris])
+    all_mask_hsv = cv2.vconcat([top_row, bottom_row])
+    all_mask_hsv = cv2.resize(all_mask_hsv, (width, height), interpolation=cv2.INTER_CUBIC)
+    cv2.imshow("All Mask HSV", all_mask_hsv)
 
     #Afficher les mask
     if comptagemask == 1:
@@ -538,9 +543,14 @@ while True:
     for i in range(len(circle_centers)):
         cv2.circle(img_recadre_copy, (circle_centers[i][0], circle_centers[i][1] - 20), circle_radius, (mean_bgr_values[i][0],mean_bgr_values[i][1], mean_bgr_values[i][2]), -1)  # Draw filled circle
 
-    cv2.imshow("Image Recadre Copy avec cercle couleurs", img_recadre_copy)
+    #cv2.imshow("Image Recadre Copy avec cercle couleurs", img_recadre_copy)
 
+    top_row = cv2.hconcat([mask_blanc, mask_cyan])
+    bottom_row = cv2.hconcat([mask_rouge, mask_gris])
+    all_mask_bgr = cv2.vconcat([top_row, bottom_row])
+    all_mask_bgr = cv2.resize(all_mask_bgr, (width, height), interpolation=cv2.INTER_CUBIC)
 
+    cv2.imshow("All Mask BGR", all_mask_bgr)
     #Afficher les mask
     if comptagemask == 1:
         cv2.imshow("Masque Blanc BGR", mask_blanc)
