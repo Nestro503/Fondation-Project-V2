@@ -11,6 +11,12 @@ Historique :
 - V4 : ...
 
 
+TO DO :
+- faire une boucle while temps imparti pas terminé
+- faire un affichage du temps restant + points obtenus
+-
+
+
 CONTEXTE :
 
 - Path
