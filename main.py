@@ -225,70 +225,83 @@ def cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_
     return image
 
 
-def recup_mask_hsv(img, img_hsv, circle_centers):
-
-    # Get the mean HSV values for each circle
-    mean_hsv_values = []
-    for center in circle_centers:
-        x, y = center
-        circle_mask = np.zeros_like(img_hsv[:, :, 0], dtype=np.uint8)
-        cv2.circle(circle_mask, center, 2, 255, -1)
-        mean_hsv = cv2.mean(img_hsv, mask=circle_mask)[:3]
-        mean_hsv_values.append(mean_hsv)
-
-
-    # Print the mean HSV values
-    for i in range(4):
-        print(f"Circle {i + 1}: Mean HSV = {mean_hsv_values[i][0]} {mean_hsv_values[i][1]} {mean_hsv_values[i][2]}")
-
-
-    for i in range(4):
-        if i == 0:
-            # Blanc
-            bound_lower = np.array([mean_hsv_values[0][0] - 8, mean_hsv_values[0][1] -10 , mean_hsv_values[0][2] -10])
-            bound_upper = np.array([mean_hsv_values[0][0] + 8, 255, 190])
-            mask_blanc = cv2.inRange(img_hsv, bound_lower, bound_upper)
-        if i == 1:
-            # Cyan
-            bound_lower = np.array([mean_hsv_values[1][0] - 8, mean_hsv_values[1][1] -10 , mean_hsv_values[1][2] -10])
-            bound_upper = np.array([mean_hsv_values[1][0] + 8, 255, 190])
-            mask_cyan = cv2.inRange(img_hsv, bound_lower, bound_upper)
-        elif i == 2:
-            # Rouge
-            bound_lower = np.array([mean_hsv_values[2][0] - 8, mean_hsv_values[2][1] - 100, mean_hsv_values[2][2] - 100])
-            bound_upper = np.array([mean_hsv_values[2][0] + 8, 255, 255])
-            mask_rouge = cv2.inRange(img_hsv, bound_lower, bound_upper)
-        elif i == 3:
-            # Gris
-            bound_lower = np.array([mean_hsv_values[3][0] - 8, mean_hsv_values[3][1] - 100, mean_hsv_values[3][2] - 100])
-            bound_upper = np.array([mean_hsv_values[3][0] + 8, 255, 255])
-            mask_gris = cv2.inRange(img_hsv, bound_lower, bound_upper)
+def recup_mask_hsv(img, img_hsv, coordblanc, coordcyan, coordrouge, coordgris):
 
     kernel = np.ones((7, 7), np.uint8)
 
 
+    # Blanc
+    circle_mask = np.zeros_like(img_hsv[:, :, 0], dtype=np.uint8)
+    cv2.circle(circle_mask, coordblanc, 2, 255, -1)
+    mean_hsv_blanc = cv2.mean(img_hsv, mask=circle_mask)[:3]
+
+    bound_lower = np.array([mean_hsv_blanc[0] - 12, mean_hsv_blanc[1] -200 , mean_hsv_blanc[2] -10])
+    bound_upper = np.array([mean_hsv_blanc[0] + 12, mean_hsv_blanc[1] +200 , mean_hsv_blanc[2] +10])
+    mask_blanc = cv2.inRange(img_hsv, bound_lower, bound_upper)
+
     mask_blanc = cv2.morphologyEx(mask_blanc, cv2.MORPH_CLOSE, kernel)
     mask_blanc = cv2.morphologyEx(mask_blanc, cv2.MORPH_OPEN, kernel)
+    mask_blanc = cv2.bitwise_and(img, img, mask=mask_blanc)
 
-    display_mask_blanc = cv2.bitwise_and(img, img, mask=mask_blanc)
+
+
+    # Cyan
+    circle_mask = np.zeros_like(img_hsv[:, :, 0], dtype=np.uint8)
+    cv2.circle(circle_mask, coordcyan, 2, 255, -1)
+    mean_hsv_cyan = cv2.mean(img_hsv, mask=circle_mask)[:3]
+
+    bound_lower = np.array([mean_hsv_cyan[0] - 8, mean_hsv_cyan[1] -10 , mean_hsv_cyan[2] -10])
+    bound_upper = np.array([mean_hsv_cyan[0] + 8, 255, 190])
+    mask_cyan = cv2.inRange(img_hsv, bound_lower, bound_upper)
 
     mask_cyan = cv2.morphologyEx(mask_cyan, cv2.MORPH_CLOSE, kernel)
     mask_cyan = cv2.morphologyEx(mask_cyan, cv2.MORPH_OPEN, kernel)
+    mask_cyan = cv2.bitwise_and(img, img, mask=mask_cyan)
 
-    display_mask_cyan = cv2.bitwise_and(img, img, mask=mask_cyan)
+
+
+     # Rouge
+    circle_mask = np.zeros_like(img_hsv[:, :, 0], dtype=np.uint8)
+    cv2.circle(circle_mask, coordrouge, 2, 255, -1)
+    mean_hsv_rouge = cv2.mean(img_hsv, mask=circle_mask)[:3]
+
+    bound_lower = np.array([mean_hsv_rouge[0] - 8, mean_hsv_rouge[1] - 100, mean_hsv_rouge[2] - 100])
+    bound_upper = np.array([mean_hsv_rouge[0] + 8, 255, 255])
+    mask_rouge = cv2.inRange(img_hsv, bound_lower, bound_upper)
 
     mask_rouge = cv2.morphologyEx(mask_rouge, cv2.MORPH_CLOSE, kernel)
     mask_rouge = cv2.morphologyEx(mask_rouge, cv2.MORPH_OPEN, kernel)
+    mask_rouge = cv2.bitwise_and(img, img, mask=mask_rouge)
 
-    display_mask_rouge = cv2.bitwise_and(img, img, mask=mask_rouge)
+
+
+    # Gris
+    circle_mask = np.zeros_like(img[:, :, 0], dtype=np.uint8)
+    cv2.circle(circle_mask, coordgris, 2, 255, -1)
+    mean_bgr_gris = cv2.mean(img, mask=circle_mask)[:3]
+
+    bound_lower = np.array([0, mean_bgr_gris[1] - 50, mean_bgr_gris[2] - 50])
+    bound_upper = np.array([mean_bgr_gris[0] + 10, mean_bgr_gris[1] + 10, mean_bgr_gris[2] + 10])
+    mask_gris = cv2.inRange(img, bound_lower, bound_upper)
 
     mask_gris = cv2.morphologyEx(mask_gris, cv2.MORPH_CLOSE, kernel)
     mask_gris = cv2.morphologyEx(mask_gris, cv2.MORPH_OPEN, kernel)
+    mask_gris = cv2.bitwise_and(img, img, mask=mask_gris)
 
-    display_mask_gris = cv2.bitwise_and(img, img, mask=mask_gris)
 
 
-    return mean_hsv_values, display_mask_blanc, display_mask_cyan, display_mask_rouge, display_mask_gris
+
+
+    # Print the mean values
+    print(f"Circle Blanc: Mean HSV = {mean_hsv_blanc[0]} {mean_hsv_blanc[1]} {mean_hsv_blanc[2]}")
+    print(f"Circle Cyan: Mean HSV = {mean_hsv_cyan[0]} {mean_hsv_cyan[1]} {mean_hsv_cyan[2]}")
+    print(f"Circle Rouge: Mean HSV = {mean_hsv_rouge[0]} {mean_hsv_rouge[1]} {mean_hsv_rouge[2]}")
+    print(f"Circle Gris: Mean BGR = {mean_bgr_gris[0]} {mean_bgr_gris[1]} {mean_bgr_gris[2]}")
+
+
+
+    return mean_hsv_blanc, mask_blanc, mean_hsv_cyan, mask_cyan, mean_hsv_rouge, mask_rouge, mean_bgr_gris, mask_gris
+
 
 
 
@@ -299,67 +312,6 @@ def recup_mask_hsv(img, img_hsv, circle_centers):
     #-----------------------------------------------------------------------------------------------------------------
     #-----------------------------------------------------------------------------------------------------------------
 
-
-def recup_mask_bgr(img, circle_centers):
-
-    # Get the mean BGR values for each circle
-    mean_bgr_values = []
-    for center in circle_centers:
-        x, y = center
-        circle_mask = np.zeros_like(img[:, :, 0], dtype=np.uint8)
-        cv2.circle(circle_mask, center, 2, 255, -1)
-        mean_bgr = cv2.mean(img, mask=circle_mask)[:3]
-        mean_bgr_values.append(mean_bgr)
-
-    # Print the mean BGR values
-    for i in range(4):
-        print(f"Circle {i + 1}: Mean BGR = {mean_bgr_values[i][0]} {mean_bgr_values[i][1]} {mean_bgr_values[i][2]}")
-
-    tolerance = 30
-
-    for i in range(4):
-        if i == 0:
-            # Blanc
-            bound_lower = np.array([mean_bgr_values[0][0] - tolerance, mean_bgr_values[0][1] - tolerance , mean_bgr_values[0][2] -tolerance])
-            bound_upper = np.array([mean_bgr_values[0][0] + tolerance, mean_bgr_values[0][1] + tolerance , mean_bgr_values[0][2] +tolerance])
-            mask_blanc = cv2.inRange(img, bound_lower, bound_upper)
-        if i == 1:
-            # Cyan
-            bound_lower = np.array([mean_bgr_values[1][0] - tolerance, mean_bgr_values[1][1] -tolerance , mean_bgr_values[1][2] -tolerance])
-            bound_upper = np.array([mean_bgr_values[1][0] + tolerance, mean_bgr_values[1][1] +tolerance , mean_bgr_values[1][2] +tolerance])
-            mask_cyan = cv2.inRange(img, bound_lower, bound_upper)
-        elif i == 2:
-            # Rouge
-            bound_lower = np.array([mean_bgr_values[2][0] - tolerance, mean_bgr_values[2][1] - tolerance, mean_bgr_values[2][2] - tolerance])
-            bound_upper = np.array([mean_bgr_values[2][0] + tolerance, mean_bgr_values[2][1] + tolerance, mean_bgr_values[2][2] + tolerance])
-            mask_rouge = cv2.inRange(img, bound_lower, bound_upper)
-        elif i == 3:
-            # Gris
-            bound_lower = np.array([mean_bgr_values[3][0] - tolerance, mean_bgr_values[3][1] - tolerance, mean_bgr_values[3][2] - tolerance])
-            bound_upper = np.array([mean_bgr_values[3][0] + tolerance, mean_bgr_values[3][1] + tolerance, mean_bgr_values[3][2] + tolerance])
-            mask_gris = cv2.inRange(img, bound_lower, bound_upper)
-
-    kernel = np.ones((7, 7), np.uint8)
-
-
-    mask_blanc = cv2.morphologyEx(mask_blanc, cv2.MORPH_CLOSE, kernel)
-    mask_blanc = cv2.morphologyEx(mask_blanc, cv2.MORPH_OPEN, kernel)
-    display_mask_blanc = cv2.bitwise_and(img, img, mask=mask_blanc)
-
-    mask_cyan = cv2.morphologyEx(mask_cyan, cv2.MORPH_CLOSE, kernel)
-    mask_cyan = cv2.morphologyEx(mask_cyan, cv2.MORPH_OPEN, kernel)
-    display_mask_cyan = cv2.bitwise_and(img, img, mask=mask_cyan)
-
-    mask_rouge = cv2.morphologyEx(mask_rouge, cv2.MORPH_CLOSE, kernel)
-    mask_rouge = cv2.morphologyEx(mask_rouge, cv2.MORPH_OPEN, kernel)
-    display_mask_rouge = cv2.bitwise_and(img, img, mask=mask_rouge)
-
-    mask_gris = cv2.morphologyEx(mask_gris, cv2.MORPH_CLOSE, kernel)
-    mask_gris = cv2.morphologyEx(mask_gris, cv2.MORPH_OPEN, kernel)
-    display_mask_gris = cv2.bitwise_and(img, img, mask=mask_gris)
-
-
-    return mean_bgr_values, display_mask_blanc, display_mask_cyan, display_mask_rouge, display_mask_gris
 
 
 
@@ -403,6 +355,15 @@ while True:
     img = cv2.resize(img, (width, height), interpolation=cv2.INTER_CUBIC)
 
 
+    '''
+    cv2.imshow("image r", img)
+    imghsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    cv2.imshow("image hsv", imghsv)
+    #WTF
+    '''
+
+
 
 
     #-------------------------------RECUPERATION PREMIERE IMAGE ET DETECTION DES COINS----------------------------------
@@ -425,6 +386,7 @@ while True:
 
     #Copie de l'image recadré pour y afficher des infos dessus
     img_recadre_copy = img_recadre.copy()
+
 
 
 
@@ -471,7 +433,7 @@ while True:
     pixel_blanc = (int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 1 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 ))
     pixel_cyan = (int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 3 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 ))
     pixel_rouge = (int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 6 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 ))
-    pixel_gris =  (int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 9 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 ))
+    pixel_gris =  (int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 10 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 ))
 
 
     #Affichage de cercle pour check si bons endroits
@@ -481,9 +443,6 @@ while True:
     cv2.circle(img_recadre_copy, pixel_gris, 8, (255,255,255), 1)
 
 
-    cv2.imshow("Image Recadre Copy avec Calib couleurs", img_recadre_copy)
-
-
     #Image en HSV pour y afficher des infos
     img_recadre_hsv = cv2.cvtColor(img_recadre, cv2.COLOR_BGR2HSV)
     #Copie de l'image recadré HSV pour y afficher des infos dessus
@@ -491,82 +450,76 @@ while True:
 
 
 
-    # Define the centers of the circles (blanc, cyan, rouge, gris )
-    circle_centers = [pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris]
-    circle_radius = 5
+
+
+    #Recup les valeurs et les mask de chaque couleurs
+    mean_hsv_blanc, mask_blanc, mean_hsv_cyan, mask_cyan, mean_hsv_rouge, mask_rouge, mean_bgr_gris, mask_gris = recup_mask_hsv(img_recadre, img_recadre_hsv, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris)
+
+    #Affichage de cercles HSV pour check si bonne couleurs
+    cv2.circle(img_recadre_hsv_copy, (pixel_blanc[0], pixel_blanc[1] - 20), 10, (mean_hsv_blanc[0],mean_hsv_blanc[1], mean_hsv_blanc[2]), -1)
+    cv2.circle(img_recadre_hsv_copy, (pixel_blanc[0], pixel_blanc[1] - 20), 10, (0,0,0), 1)
+    cv2.circle(img_recadre_hsv_copy, (pixel_cyan[0], pixel_cyan[1] - 20), 10, (mean_hsv_cyan[0],mean_hsv_cyan[1], mean_hsv_cyan[2]), -1)
+    cv2.circle(img_recadre_hsv_copy, (pixel_cyan[0], pixel_cyan[1] - 20), 10, (0,0,0), 1)
+    cv2.circle(img_recadre_hsv_copy, (pixel_rouge[0], pixel_rouge[1] - 20), 10, (mean_hsv_rouge[0],mean_hsv_rouge[1], mean_hsv_rouge[2]), -1)
+    cv2.circle(img_recadre_hsv_copy, (pixel_rouge[0], pixel_rouge[1] - 20), 10, (0,0,0), 1)
+    #Affichage du cercle BGR pour check si bonne couleur
+    cv2.circle(img_recadre_copy, (pixel_gris[0], pixel_gris[1] + 20), 10, (mean_bgr_gris[0],mean_bgr_gris[1], mean_bgr_gris[2]), -1)
+    cv2.circle(img_recadre_copy, (pixel_gris[0], pixel_gris[1] + 20), 10, (0,0,0), 1)
+
+    cv2.imshow("Image Recadre HSV Copy avec cercle couleurs", img_recadre_hsv_copy)
+    cv2.imshow("Image Recadre BGR Copy avec cercle couleurs", img_recadre_copy)
+
+
+
+
+
+    top_row = cv2.hconcat([mask_blanc, mask_cyan])
+    bottom_row = cv2.hconcat([mask_rouge, mask_gris])
+    all_mask_hsv = cv2.vconcat([top_row, bottom_row])
+    all_mask_hsv = cv2.resize(all_mask_hsv, (IMAGE_RECADRE_LONGUEUR, IMAGE_RECADRE_LARGEUR), interpolation=cv2.INTER_CUBIC)
+
+
+
+    cv2.imshow("All Mask HSV", all_mask_hsv)
+
+
 
 
     print("comptagemask = ", comptagemask)
     if cv2.waitKey(1) & 0xFF == ord('n'):
         comptagemask += 1
         print("comptagemask = ", comptagemask)
-        if comptagemask == 5:
+        if comptagemask == 6:
             comptagemask = 0
 
 
 
-            #------------------------PARTIE HSV---------------------------------
-
-    mean_hsv_values, display_mask_blanc, display_mask_cyan, display_mask_rouge, display_mask_gris = recup_mask_hsv(img_recadre, img_recadre_hsv, circle_centers)
-
-    #Affichage de cercles pour check si bonne couleurs
-    for i in range(len(circle_centers)):
-        cv2.circle(img_recadre_hsv_copy, (circle_centers[i][0], circle_centers[i][1] - 20), circle_radius, (mean_hsv_values[i][0],mean_hsv_values[i][1], mean_hsv_values[i][2]), -1)  # Draw filled circle
-
-    #cv2.imshow("Image Recadre HSV Copy avec cercle couleurs", img_recadre_hsv_copy)
-
-    top_row = cv2.hconcat([display_mask_blanc, display_mask_cyan])
-    bottom_row = cv2.hconcat([display_mask_rouge, display_mask_gris])
-    all_mask_hsv = cv2.vconcat([top_row, bottom_row])
-    all_mask_hsv = cv2.resize(all_mask_hsv, (width, height), interpolation=cv2.INTER_CUBIC)
-    cv2.imshow("All Mask HSV", all_mask_hsv)
-
     #Afficher les mask
     if comptagemask == 1:
-        cv2.imshow("Masque Blanc HSV", display_mask_blanc)
+        cv2.imshow("All Mask HSV", all_mask_hsv)
     elif comptagemask == 2:
-        cv2.imshow("Masque Cyan HSV", display_mask_cyan)
+        cv2.imshow("Masque Blanc HSV", mask_blanc)
     elif comptagemask == 3:
-        cv2.imshow("Masque Rouge HSV", display_mask_rouge)
+        cv2.imshow("Masque Cyan HSV", mask_cyan)
     elif comptagemask == 4:
-        cv2.imshow("Masque Gris HSV", display_mask_gris)
+        cv2.imshow("Masque Rouge HSV", mask_rouge)
+    elif comptagemask == 5:
+        cv2.imshow("Masque Gris HSV", mask_gris)
 
 
 
 
-            #------------------------PARTIE BGR---------------------------------
-
-
-    mean_bgr_values, mask_blanc, mask_cyan, mask_rouge, mask_gris = recup_mask_bgr(img_recadre, circle_centers)
-
-    #Affichage de cercles pour check si bonne couleurs
-    for i in range(len(circle_centers)):
-        cv2.circle(img_recadre_copy, (circle_centers[i][0], circle_centers[i][1] - 20), circle_radius, (mean_bgr_values[i][0],mean_bgr_values[i][1], mean_bgr_values[i][2]), -1)  # Draw filled circle
-
-    #cv2.imshow("Image Recadre Copy avec cercle couleurs", img_recadre_copy)
-
-    top_row = cv2.hconcat([mask_blanc, mask_cyan])
-    bottom_row = cv2.hconcat([mask_rouge, mask_gris])
-    all_mask_bgr = cv2.vconcat([top_row, bottom_row])
-    all_mask_bgr = cv2.resize(all_mask_bgr, (width, height), interpolation=cv2.INTER_CUBIC)
-
-    cv2.imshow("All Mask BGR", all_mask_bgr)
-    #Afficher les mask
-    if comptagemask == 1:
-        cv2.imshow("Masque Blanc BGR", mask_blanc)
-    elif comptagemask == 2:
-        cv2.imshow("Masque Cyan BGR", mask_cyan)
-    elif comptagemask == 3:
-        cv2.imshow("Masque Rouge BGR", mask_rouge)
-    elif comptagemask == 4:
-        cv2.imshow("Masque Gris BGR", mask_gris)
-
-
+    
 
 
     print("")
     print("----------------------------------------------------------------------------------------------------------")
     print("")
+
+
+
+
+
 
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
