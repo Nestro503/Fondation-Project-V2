@@ -22,6 +22,9 @@ IMAGE_RECADRE_LONGUEUR = 1600
 IMAGE_RECADRE_LARGEUR = 900
 
 RADIUS_ROBOT = 100
+QUAD_RES = 20
+
+ARRIV_COORDS = [(365, 85, 475, 175), (365, 730, 475, 820), (1130, 85, 1230, 175), (1130, 730, 1230, 820)]
 
 
 
@@ -136,15 +139,19 @@ def calculate_pixel_distance(corners, ids):
 
 def coordrobot(corners, ids):
     x_robot = y_robot = None  # Initialize with None to handle cases where the marker isn't detected
+    corners_robot = None  # Initialisation à None pour les coins
     if len(corners) < 1:
-        return None, None  # Early return if there are no corners to process
+        return None, None, None  # Aucun coin détecté, retourne None pour le centre et les coins
+
     index_robot = np.where(ids == 137)[0]
     if index_robot.size > 0:
-        # Calculate the center of the ArUco marker
+        # Récupération des coins du marqueur ArUco
         marker_corners = corners[index_robot[0]][0]
-        x_robot = np.mean(marker_corners[:, 0])
-        y_robot = np.mean(marker_corners[:, 1])
-    return x_robot, y_robot
+        x_robot = np.mean(marker_corners[:, 0])  # Calcul du centre x
+        y_robot = np.mean(marker_corners[:, 1])  # Calcul du centre y
+        corners_robot = marker_corners  # Stockage des coins
+
+    return x_robot, y_robot, corners_robot
 
 
 def aruco_display(corners, ids, image):
@@ -289,12 +296,50 @@ def cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_
     return image
 
 
+def draw_grid(image, cell_size, color, thickness, aruco_corners):
+    h, w, _ = image.shape
 
+    # Dessiner les lignes horizontales et verticales et vérifier l'intersection avec l'ArUco
+    for i in range(0, h, cell_size):
+        for j in range(0, w, cell_size):
+            top_left = (j, i)
+            bottom_right = (j + cell_size, i + cell_size)
+            filled = False
+
+            # Vérifiez si l'ArUco est dans cette cellule
+            for id_, corners in aruco_corners.items():
+                # Transforme les coins en rectangle pour comparaison
+                aruco_top_left = (np.min(corners[:, 0]), np.min(corners[:, 1]))
+                aruco_bottom_right = (np.max(corners[:, 0]), np.max(corners[:, 1]))
+
+                # Vérifier l'intersection
+                if (aruco_top_left[0] < bottom_right[0] and aruco_bottom_right[0] > top_left[0] and
+                    aruco_top_left[1] < bottom_right[1] and aruco_bottom_right[1] > top_left[1]):
+                    cv2.rectangle(image, top_left, bottom_right, (255, 0, 0), -1)  # Remplir en bleu
+                    filled = True
+                    break
+
+            # Vérifiez les zones d'arrivée seulement si la cellule n'est pas déjà remplie par un ArUco
+            if not filled:
+                for (x1, y1, x2, y2) in ARRIV_COORDS:
+                    if not (bottom_right[0] <= x1 or top_left[0] >= x2 or bottom_right[1] <= y1 or top_left[1] >= y2):
+                        cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), -1)
+                        filled = True
+                        break
+
+            if not filled:
+                # Dessiner les bords de la cellule si elle n'est pas remplie
+                cv2.rectangle(image, top_left, bottom_right, color, thickness)
+
+    return image
+def mouse_callback(event, x, y, flags, param):
+    if event == cv2.EVENT_MOUSEMOVE:
+        # Afficher les coordonnées du curseur en temps réel
+        print("Coordonnées du curseur: X = {}, Y = {}".format(x, y))
 
 
 # Mettre à 0 pour video, 1 pour photos
-TEST = 0
-
+TEST = 1
 
 aruco_type = "DICT_ARUCO_ORIGINAL"
 
@@ -307,7 +352,8 @@ if TEST != 1:
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
 
-
+# cv2.namedWindow("Image recadre")
+# cv2.setMouseCallback("Image recadre", mouse_callback)
 
 nomImages = ("./Images/mapframevideo.jpg", "./Images/map3adam.jpg", "./Images/map1.jpg", )
 nbImages = len(nomImages)
@@ -343,7 +389,7 @@ while True:
 
 
 
-    cv2.imshow("Original Image", img)
+    #cv2.imshow("Original Image", img)
 
 
     x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = trouver_arucos_coins(corners, ids)
@@ -364,24 +410,19 @@ while True:
 
 
     x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = trouver_arucos_coins(corners_recadre, ids_recadre)
-    x_robot, y_robot = coordrobot(corners_recadre, ids_recadre)
+    x_robot, y_robot, corners_robot = coordrobot(corners_recadre, ids_recadre)
 
     pixel_distance_x, mm_nbr_pixel_x, pixel_nbr_mm_x, pixel_distance_y, mm_nbr_pixel_y, pixel_nbr_mm_y = calcul_pixel_mm(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3)
 
     # Check if coordinates are not None and draw the circle
     if x_robot is not None and y_robot is not None:
-        cv2.circle(img_recadre, (int(x_robot), int(y_robot)), int(RADIUS_ROBOT*(mm_nbr_pixel_x+mm_nbr_pixel_y)/2), (234,	158,	236), 3)
+        cv2.circle(img_recadre, (int(x_robot), int(y_robot)), int(RADIUS_ROBOT * (mm_nbr_pixel_x + mm_nbr_pixel_y) / 2),
+                   (234, 158, 236), 3)
     else:
         print("ArUco marker 137 not detected.")
 
 
     img_recadre = cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3, mm_nbr_pixel_x, mm_nbr_pixel_y, img_recadre)
-
-
-
-
-
-
 
 
     # Coordonnées des pixels à vérifier
@@ -400,7 +441,10 @@ while True:
                10,
                (int(bgr_pixel_gris[0]), int(bgr_pixel_gris[1]), int(bgr_pixel_gris[2])), -1)
 
-    cv2.imshow("Image recadre", img_recadre)
+    aruco_corners = {137: corners_robot} if corners_robot is not None else {}
+    img_with_grid = draw_grid(img_recadre, QUAD_RES,  (0, 0, 0), 1, aruco_corners)
+
+    cv2.imshow("Image recadre", img_with_grid)
 
 
 

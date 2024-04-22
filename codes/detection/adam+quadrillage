@@ -22,6 +22,7 @@ IMAGE_RECADRE_LONGUEUR = 1600
 IMAGE_RECADRE_LARGEUR = 900
 
 RADIUS_ROBOT = 100
+QUAD_RES = 50
 
 
 
@@ -289,12 +290,34 @@ def cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_
     return image
 
 
+def draw_grid(image, cell_size, color, thickness):
+    """
+    Dessine un quadrillage sur l'image donnée avec une résolution spécifiée par la taille des cellules.
+
+    Args:
+    image (np.array): L'image sur laquelle dessiner le quadrillage.
+    cell_size (int): Taille des cellules du quadrillage (en pixels).
+    color (tuple): Couleur du quadrillage (B, G, R).
+    thickness (int): Épaisseur des lignes du quadrillage.
+
+    Returns:
+    np.array: L'image modifiée avec le quadrillage dessiné.
+    """
+    h, w, _ = image.shape
+    # Dessiner les lignes horizontales
+    for i in range(0, h, cell_size):
+        cv2.line(image, (0, i), (w, i), color, thickness)
+
+    # Dessiner les lignes verticales
+    for i in range(0, w, cell_size):
+        cv2.line(image, (i, 0), (i, h), color, thickness)
+
+    return image
 
 
 
 # Mettre à 0 pour video, 1 pour photos
-TEST = 0
-
+TEST = 1
 
 aruco_type = "DICT_ARUCO_ORIGINAL"
 
@@ -343,7 +366,7 @@ while True:
 
 
 
-    cv2.imshow("Original Image", img)
+    #cv2.imshow("Original Image", img)
 
 
     x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = trouver_arucos_coins(corners, ids)
@@ -400,7 +423,9 @@ while True:
                10,
                (int(bgr_pixel_gris[0]), int(bgr_pixel_gris[1]), int(bgr_pixel_gris[2])), -1)
 
-    cv2.imshow("Image recadre", img_recadre)
+    img_with_grid = draw_grid(img_recadre, QUAD_RES,  (0, 0, 0), 1)
+
+    cv2.imshow("Image recadre", img_with_grid)
 
 
 
@@ -424,7 +449,7 @@ while True:
     img_recadre[mask_gris > 0] = [120, 120, 0]
 
     # Afficher l'image modifiée
-    cv2.imshow("Image avec couleur de référence remplacée par du noir", img_recadre)
+    #cv2.imshow("Image avec couleur de référence remplacée par du noir", img_recadre)
 
 
 

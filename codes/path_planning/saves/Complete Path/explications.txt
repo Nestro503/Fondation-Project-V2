@@ -1,0 +1,42 @@
+
+Ce dossier contient tous les codes qui ont était nécessaire pour l'élaboration :
+D'UNE TRAJECTOIRE COMPLETE PERMETTANT AU ROBOT DE PASSER PAR PLUSIEURS POINTS DONNEES
+
+
+Historique :
+- V0 : Version de base                                                              // OK
+- V1 : Positionnement des zones de dépots + cube (aléatoire + valeur) + lien        // To do
+- V2 : ...
+- V3 : ...
+- V4 : ...
+
+
+TO DO :
+- faire une boucle while temps imparti pas terminé
+- faire un affichage du temps restant + points obtenus
+-
+
+
+CONTEXTE :
+
+- Path
+Dans l'idéal, votre itinéraire global passe par tous les cubes de couleur (en évitant les cubes gris).
+Le seul choix qu'il peut y avoir, c'est dans quel ordre, ce qui a une importance étant donné que le temps vous sera limité.
+Chaque cube doit être ramené dans la bonne zone de dépôt (cyan pour le cubes bleu, magenta pour les cubes rouges, jaune pour les cubes blancs).
+
+- Objects
+• 1 cube bleu (10 points)
+• 3 cubes blancs (5 points)
+• 4 cubes rouges (1 point)
+
+1 cube touché par le robot rapporte la moitié de sa valeur
+1 cube ramené dans la bonne zone rapporte sa valeur entière
+
+- Obstacle
+Des cubes gris
+Les obstacles touchés apportent des points de pénalité
+
+
+- Objectif : faire le plus de points en un temps imparti
+
+

@@ -1,7 +1,6 @@
 import numpy as np
 import time
 import cv2
-import cv2.aruco as aruco
 
 ARUCO_DICT = {
     "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
@@ -22,6 +21,8 @@ IMAGE_RECADRE_LONGUEUR = 1600
 IMAGE_RECADRE_LARGEUR = 900
 
 RADIUS_ROBOT = 100
+
+QUAD_RES = 50
 
 
 
@@ -288,12 +289,30 @@ def cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_
 
     return image
 
+def draw_grid(image, cell_size, color, thickness):
+    """
+    Dessine un quadrillage sur l'image donnée avec une résolution spécifiée par la taille des cellules.
 
+    Args:
+    image (np.array): L'image sur laquelle dessiner le quadrillage.
+    cell_size (int): Taille des cellules du quadrillage (en pixels).
+    color (tuple): Couleur du quadrillage (B, G, R).
+    thickness (int): Épaisseur des lignes du quadrillage.
 
+    Returns:
+    np.array: L'image modifiée avec le quadrillage dessiné.
+    """
+    h, w, _ = image.shape
+    # Dessiner les lignes horizontales
+    for i in range(0, h, cell_size):
+        cv2.line(image, (0, i), (w, i), color, thickness)
 
+    # Dessiner les lignes verticales
+    for i in range(0, w, cell_size):
+        cv2.line(image, (i, 0), (i, h), color, thickness)
 
-# Mettre à 0 pour video, 1 pour photos
-TEST = 0
+    return image
+
 
 
 aruco_type = "DICT_ARUCO_ORIGINAL"
@@ -302,38 +321,27 @@ arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
 
 arucoParams = cv2.aruco.DetectorParameters()
 
-if TEST != 1:
-    cap = cv2.VideoCapture("./Videos/mapvideo.mp4")
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
+# cap = cv2.VideoCapture("./Images/mapvideoframe.jpg")
+
+cap = cv2.VideoCapture("./Videos/mapvideo.mp4")
+
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
 
 
 
-nomImages = ("./Images/mapframevideo.jpg", "./Images/map3adam.jpg", "./Images/map1.jpg", )
-nbImages = len(nomImages)
+while cap.isOpened():
 
-img = cv2.imread(nomImages[0])
-
-cpt = 0
-
-while True:
-    if TEST == 0:
-        ret, img = cap.read()
-    elif TEST == 1:
-        img = cv2.imread(nomImages[cpt])
-        if cv2.waitKey(1) & 0xFF == ord('p'):
-            cpt += 1
-            if cpt == nbImages:
-                cpt = 0
+    ret, img = cap.read()
 
     h, w, _ = img.shape
     print("Lecture d'image réussie. Shape: {}".format((h, w)))
 
-
-    width = IMAGE_LONGUEUR
-    height = IMAGE_LARGEUR
+    '''
+    width = 1920
+    height = int(width * (h / w))
     img = cv2.resize(img, (width, height), interpolation=cv2.INTER_CUBIC)
-
+    '''
 
 
 
@@ -343,7 +351,7 @@ while True:
 
 
 
-    cv2.imshow("Original Image", img)
+    # cv2.imshow("Original Image", img)
 
 
     x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = trouver_arucos_coins(corners, ids)
@@ -378,12 +386,6 @@ while True:
     img_recadre = cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3, mm_nbr_pixel_x, mm_nbr_pixel_y, img_recadre)
 
 
-
-
-
-
-
-
     # Coordonnées des pixels à vérifier
     pixel_rouge = (int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 6 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 ))
     pixel_gris =  (int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 9 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 ))
@@ -400,72 +402,15 @@ while True:
                10,
                (int(bgr_pixel_gris[0]), int(bgr_pixel_gris[1]), int(bgr_pixel_gris[2])), -1)
 
-    cv2.imshow("Image recadre", img_recadre)
+    # cv2.imshow("Image recadre", img_recadre)
 
+    img_with_grid = draw_grid(img_recadre, QUAD_RES, (0, 0, 0), 1)  # 10 lignes horizontales et 10 lignes verticales, couleur rouge, épaisseur de 2
 
+    cv2.imshow("Image avec quadrillage", img_with_grid)
 
-
-
-
-
-
-    # Définir une tolérance pour la plage de couleur rouge autour du pixel de référence
-    tolerance = 25  # Tolérance pour le rgb
-
-
-    # Créer les bornes inférieure et supérieure pour le masque
-    gris_lower = np.array(bgr_pixel_gris) - tolerance
-    gris_upper = np.array(bgr_pixel_gris) + tolerance
-
-    # Créer un masque qui détecte tous les pixels dans la plage de rouge définie
-    mask_gris = cv2.inRange(img_recadre, gris_lower, gris_upper)
-
-    # Remplacer la couleur rouge par du noir dans l'image originale
-    img_recadre[mask_gris > 0] = [120, 120, 0]
-
-    # Afficher l'image modifiée
-    cv2.imshow("Image avec couleur de référence remplacée par du noir", img_recadre)
-
-
-
-
-    '''
-    # Convertir l'image BGR en HSV
-    img_recadre_hsv = cv2.cvtColor(img_recadre, cv2.COLOR_BGR2HSV)
-
-    # Obtenez la valeur HSV du pixel
-    hsv_pixel_rouge = img_recadre_hsv[pixel_rouge[1], pixel_rouge[0]]
-
-    # Définir des tolérances
-    tolerance_hue = 10  # Tolérance pour la teinte
-    tolerance_sat_val = 40  # Tolérance pour la saturation et la valeur
-
-    teinte_rouge = hsv_pixel_rouge[0]
-    saturation_rouge = hsv_pixel_rouge[1]
-    valeur_rouge = hsv_pixel_rouge[2]
-
-
-    # Bornes basées sur la teinte, la saturation, et la valeur du pixel rouge
-    rouge_lower_hsv = np.array([max(teinte_rouge - tolerance_hue, 0), max(saturation_rouge - tolerance_sat_val, 100), max(valeur_rouge - tolerance_sat_val, 100)])
-    rouge_upper_hsv = np.array([min(teinte_rouge + tolerance_hue, 180), min(saturation_rouge + tolerance_sat_val, 255), min(valeur_rouge + tolerance_sat_val, 255)])
-
-
-    # Créer un masque HSV qui détecte tous les pixels dans la plage définie
-    mask_rouge_hsv = cv2.inRange(img_recadre_hsv, rouge_lower_hsv, rouge_upper_hsv)
-
-    # Remplacer la couleur détectée par une couleur spécifique (par exemple, noir avec une teinte jaune)
-    img_recadre[mask_rouge_hsv > 0] = [120, 120, 0]  # BGR
-
-    # Afficher l'image modifiée
-    cv2.imshow("Image HSV avec couleur de référence remplacée par du noir ", img_recadre)
-    '''
-
-
-
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord("q"):
         break
 
-if TEST != 1:
-    cap.release()
 cv2.destroyAllWindows()
+cap.release()

@@ -22,6 +22,9 @@ IMAGE_RECADRE_LONGUEUR = 1600
 IMAGE_RECADRE_LARGEUR = 900
 
 RADIUS_ROBOT = 100
+QUAD_RES = 20
+
+ARRIV_COORDS = [(365, 85, 475, 175), (365, 730, 475, 820), (1130, 85, 1230, 175), (1130, 730, 1230, 820)]
 
 
 
@@ -289,12 +292,39 @@ def cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_
     return image
 
 
+def draw_grid(image, cell_size, color, thickness):
+    h, w, _ = image.shape
 
+    # Dessiner les lignes horizontales et verticales et vérifier l'intersection avec les carrés
+    for i in range(0, h, cell_size):
+        for j in range(0, w, cell_size):
+            # Calculer les coordonnées de la cellule actuelle
+            top_left = (j, i)
+            bottom_right = (j + cell_size, i + cell_size)
+            filled = False
+
+            for (x1, y1, x2, y2) in ARRIV_COORDS:
+                # Vérifier si la cellule courante contient une partie de l'un des carrés
+                if not (bottom_right[0] <= x1 or top_left[0] >= x2 or bottom_right[1] <= y1 or top_left[1] >= y2):
+                    cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), -1)
+                    filled = True
+                    break  # Une fois remplie, pas besoin de vérifier d'autres carrés pour cette cellule
+
+            if not filled:
+                # Dessiner les bords de la cellule si elle n'est pas remplie
+                cv2.rectangle(image, top_left, bottom_right, color, thickness)
+
+    return image
+
+
+def mouse_callback(event, x, y, flags, param):
+    if event == cv2.EVENT_MOUSEMOVE:
+        # Afficher les coordonnées du curseur en temps réel
+        print("Coordonnées du curseur: X = {}, Y = {}".format(x, y))
 
 
 # Mettre à 0 pour video, 1 pour photos
-TEST = 0
-
+TEST = 1
 
 aruco_type = "DICT_ARUCO_ORIGINAL"
 
@@ -307,6 +337,8 @@ if TEST != 1:
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
 
+# cv2.namedWindow("Image recadre")
+# cv2.setMouseCallback("Image recadre", mouse_callback)
 
 
 nomImages = ("./Images/mapframevideo.jpg", "./Images/map3adam.jpg", "./Images/map1.jpg", )
@@ -343,7 +375,7 @@ while True:
 
 
 
-    cv2.imshow("Original Image", img)
+    #cv2.imshow("Original Image", img)
 
 
     x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = trouver_arucos_coins(corners, ids)
@@ -378,12 +410,6 @@ while True:
     img_recadre = cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3, mm_nbr_pixel_x, mm_nbr_pixel_y, img_recadre)
 
 
-
-
-
-
-
-
     # Coordonnées des pixels à vérifier
     pixel_rouge = (int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 6 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 ))
     pixel_gris =  (int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 9 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 ))
@@ -400,7 +426,9 @@ while True:
                10,
                (int(bgr_pixel_gris[0]), int(bgr_pixel_gris[1]), int(bgr_pixel_gris[2])), -1)
 
-    cv2.imshow("Image recadre", img_recadre)
+    img_with_grid = draw_grid(img_recadre, QUAD_RES,  (0, 0, 0), 1)
+
+    cv2.imshow("Image recadre", img_with_grid)
 
 
 
@@ -424,7 +452,7 @@ while True:
     img_recadre[mask_gris > 0] = [120, 120, 0]
 
     # Afficher l'image modifiée
-    cv2.imshow("Image avec couleur de référence remplacée par du noir", img_recadre)
+    #cv2.imshow("Image avec couleur de référence remplacée par du noir", img_recadre)
 
 
 
