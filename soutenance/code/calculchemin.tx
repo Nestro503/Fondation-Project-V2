@@ -2,6 +2,7 @@ import numpy as np
 import time
 import cv2
 import cv2.aruco as aruco
+import math
 
 #coef_rouge = distance / valeur_rouge
 #distance = math.sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2)
@@ -34,6 +35,10 @@ ARRIV_COORDS = [
     ((1130, 730, 1230, 820), (0, 255, 0))  # Vert
 ]
 
+
+arucoop = (400, 400)
+closest_coord = None
+min_distance = float('inf')  # Initialiser à l'infini
 
 
 
@@ -363,6 +368,9 @@ def find_centers(cubes):
     """ Convert corner coordinates to center coordinates. """
     return [(int((x1 + x2) / 2), int((y1 + y2) / 2)) for (x1, y1), (x2, y2) in cubes]
 
+def calculate_distance(p1, p2):
+    return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
+
 def are_adjacent(c1, c2):
     """ Check if centers are adjacent considering each square has a side of 20 units. """
     x1, y1 = c1
@@ -647,8 +655,21 @@ while True:
 
     cube_centers = find_centers(red_cubes_coords)
     unique_representatives = group_cubes(cube_centers)
-    print("prout")
+
     print(unique_representatives)
+    print("Distances à Aruco :")
+
+    for coord in unique_representatives:
+        distance_to_aruco = calculate_distance(coord, arucoop)
+        if distance_to_aruco < min_distance:
+            min_distance = distance_to_aruco
+            closest_coord = coord
+
+    # Afficher la coordonnée la plus proche et la distance correspondante
+    print("La coordonnée la plus proche de Aruco est :", closest_coord)
+    print("Avec une distance de :", min_distance)
+
+
 
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
