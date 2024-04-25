@@ -1,17 +1,12 @@
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Code permettant de determiner une trajectoire composée de distances et d'angles (pas OP encore)
-# ----------------------------------------------------------------------------------------------------------------------
-
 import pygame
 import math
 from queue import PriorityQueue
 
-# Charger l'image
+# Load the image
 image_path = "codes/path_planning/img/test.png"  # Spécifiez le chemin de votre image
 IMAGE = pygame.image.load(image_path)
 
-# Redimensionner l'image pour correspondre à la taille de l'écran
+# Redimensionnez l'image pour correspondre à la taille de l'écran
 WIDTH = IMAGE.get_width()
 HEIGHT = IMAGE.get_height()
 IMAGE = pygame.transform.scale(IMAGE, (WIDTH, HEIGHT))
@@ -19,7 +14,7 @@ IMAGE = pygame.transform.scale(IMAGE, (WIDTH, HEIGHT))
 # Définir les couleurs
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
+BLUE = (0, 255, 0)
 YELLOW = (255, 255, 0)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -32,12 +27,12 @@ class Spot:
     def __init__(self, row, col, width, total_rows):
         self.row = row
         self.col = col
-        self.x = col * width
-        self.y = row * width
-        self.width = width
-        self.total_rows = total_rows
+        self.x = row * width
+        self.y = col * width
         self.color = WHITE
         self.neighbors = []
+        self.width = width
+        self.total_rows = total_rows
 
     def get_pos(self):
         return self.row, self.col
@@ -98,51 +93,64 @@ class Spot:
     def __lt__(self, other):
         return False
 
+# definition de l'heuristique
 def h(p1, p2):
     x1, y1 = p1
     x2, y2 = p2
-    return abs(x1 - x2) + abs(y1 - y2)  # Manhattan distance
+    return abs(x1 - x2) + abs(y1 - y2)                       #Manhattan
+    #return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)       #Euclidienne
+    #return max(abs(x1 - x2), abs(y1 - y2))                  #Tchebychev
 
-def reconstruct_path(came_from, start, end):
-    path = []
-    current = end
-    while current != start:
-        prev = came_from[current]
-        distance = math.sqrt((current.col - prev.col) ** 2 + (current.row - prev.row) ** 2)
-        angle = math.degrees(math.atan2(current.row - prev.row, current.col - prev.col))
-        path.append((prev, current, distance, angle))
-        current = prev
-    path.reverse()
-    return path
+
+
+def reconstruct_path(came_from, current, draw):
+    while current in came_from:
+        current = came_from[current]
+        current.make_path()
+        draw()
 
 def algorithm(draw, grid, start, end):
+    count = 0
     open_set = PriorityQueue()
-    open_set.put((0, start))
+    open_set.put((0, count, start))
     came_from = {}
     g_score = {spot: float("inf") for row in grid for spot in row}
     g_score[start] = 0
+    f_score = {spot: float("inf") for row in grid for spot in row}
+    f_score[start] = h(start.get_pos(), end.get_pos())
+    open_set_hash = {start}
 
     while not open_set.empty():
-        current = open_set.get()[1]
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        current = open_set.get()[2]
+        open_set_hash.remove(current)
 
         if current == end:
-            path = reconstruct_path(came_from, start, end)
-            return path
+            reconstruct_path(came_from, end, draw)
+            end.make_end()
+            return True
 
         for neighbor in current.neighbors:
             temp_g_score = g_score[current] + 1
             if temp_g_score < g_score[neighbor]:
                 came_from[neighbor] = current
                 g_score[neighbor] = temp_g_score
-                f_score = temp_g_score + h(neighbor.get_pos(), end.get_pos())
-                open_set.put((f_score, neighbor))
-                neighbor.make_open()
+                f_score[neighbor] = temp_g_score + h(neighbor.get_pos(), end.get_pos())
+                if neighbor not in open_set_hash:
+                    count += 1
+                    open_set.put((f_score[neighbor], count, neighbor))
+                    open_set_hash.add(neighbor)
+                    neighbor.make_open()
 
         draw()
+
         if current != start:
             current.make_closed()
 
-    return []
+    return False
 
 def make_grid(rows, width):
     grid = []
@@ -154,40 +162,38 @@ def make_grid(rows, width):
             grid[i].append(spot)
     return grid
 
-def draw(win, grid, rows, width, path=None):
-    win.blit(IMAGE, (0, 0))  # Afficher l'image à chaque redessin
+
+def draw_grid(win, rows, width):
+    gap = width // rows
+    # Définir la couleur des lignes avec une opacité réduite (alpha)
+    line_color = (GREY[0], GREY[1], GREY[2], 0)  # Ajoutez un quatrième élément pour l'opacité (100 dans cet exemple)
+
+    for i in range(rows):
+        pygame.draw.line(win, line_color, (0, i * gap), (width, i * gap),
+                         1)  # Utilisez une largeur de ligne de 1 pour éviter de masquer l'image
+    for j in range(rows):
+        pygame.draw.line(win, line_color, (j * gap, 0), (j * gap, width), 1)  # Utilisez une largeur de ligne de 1 pour éviter de masquer l'image
+
+
+def draw(win, grid, rows, width):
+    win.blit(IMAGE, (0, 0))  # Affichez l'image à chaque redessin
     for row in grid:
         for spot in row:
             spot.draw(win)
-
-    # Dessiner le chemin en violet avec les segments de ligne
-    if path:
-        for p1, p2, distance, angle in path:
-            pygame.draw.line(win, PURPLE, (p1.col * (width // rows) + (width // rows // 2), p1.row * (width // rows) + (width // rows // 2)),
-                             (p2.col * (width // rows) + (width // rows // 2), p2.row * (width // rows) + (width // rows // 2)), 2)
-            pygame.draw.circle(win, PURPLE, (p2.col * (width // rows) + (width // rows // 2), p2.row * (width // rows) + (width // rows // 2)), 5)
-            pygame.draw.line(win, PURPLE, (p2.col * (width // rows) + (width // rows // 2), p2.row * (width // rows) + (width // rows // 2)),
-                             (p2.col * (width // rows) + (width // rows // 2) + int(20 * math.cos(math.radians(angle))),
-                              p2.row * (width // rows) + (width // rows // 2) + int(20 * math.sin(math.radians(angle)))), 2)
-
-    # Dessiner la grille
-    for i in range(rows):
-        pygame.draw.line(win, GREY, (0, i * (width // rows)), (width, i * (width // rows)))
-        pygame.draw.line(win, GREY, (i * (width // rows), 0), (i * (width // rows), width))
-
+    draw_grid(win, rows, width)
     pygame.display.update()
 
 def get_clicked_pos(pos, rows, width):
     gap = width // rows
-    x, y = pos
+    y, x = pos
     row = y // gap
     col = x // gap
     return row, col
 
 def main():
-    pygame.init()
+    pygame.init()  # Initialisez Pygame
 
-    # Calculer le nombre de rangées en fonction du ratio entre la largeur et la hauteur de l'image
+    # Calculez le nombre de rangées en fonction du ratio entre la largeur et la hauteur de l'image
     ROW_SCALE_FACTOR = 0.01 * 5  # Facteur d'échelle pour ajuster le nombre de rangées
     ROWS = int(HEIGHT * ROW_SCALE_FACTOR)
 
@@ -196,8 +202,8 @@ def main():
     start = None
     end = None
 
-    WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("A* Path Finding Algorithm")
+    WIN = pygame.display.set_mode((WIDTH, HEIGHT))  # Définissez la surface d'affichage
+    pygame.display.set_caption("A* Path Finding Algorithm")  # Définissez le titre de la fenêtre
 
     run = True
     while run:
@@ -206,7 +212,7 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
 
-            if pygame.mouse.get_pressed()[0]:  # Clic gauche
+            if pygame.mouse.get_pressed()[0]: # LEFT
                 pos = pygame.mouse.get_pos()
                 row, col = get_clicked_pos(pos, ROWS, WIDTH)
                 spot = grid[row][col]
@@ -219,7 +225,7 @@ def main():
                 elif spot != end and spot != start:
                     spot.make_barrier()
 
-            elif pygame.mouse.get_pressed()[2]:  # Clic droit
+            elif pygame.mouse.get_pressed()[2]: # RIGHT
                 pos = pygame.mouse.get_pos()
                 row, col = get_clicked_pos(pos, ROWS, WIDTH)
                 spot = grid[row][col]
@@ -234,11 +240,7 @@ def main():
                     for row in grid:
                         for spot in row:
                             spot.update_neighbors(grid)
-                    path = algorithm(lambda: draw(WIN, grid, ROWS, WIDTH), grid, start, end)
-                    print("Trajectoire:")
-                    for p1, p2, distance, angle in path:
-                        print(f"De ({p1.col}, {p1.row}) à ({p2.col}, {p2.row}), Distance: {distance:.2f}, Angle: {angle:.2f} degrés")
-                    draw(WIN, grid, ROWS, WIDTH, path)  # Dessiner le chemin avec les nœuds et les segments
+                    algorithm(lambda: draw(WIN, grid, ROWS, WIDTH), grid, start, end)
                 if event.key == pygame.K_c:
                     start = None
                     end = None
@@ -248,4 +250,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
