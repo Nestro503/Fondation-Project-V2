@@ -430,12 +430,12 @@ def process_grid(image, mm_nbr_pixel_x, mm_nbr_pixel_y, aruco_corners, mask_blan
 
             # Bordures
             if (i < 50 * mm_nbr_pixel_y) or (i + QUAD_RES > h - 50 * mm_nbr_pixel_y) or \
-                    (j < 50 * mm_nbr_pixel_x) or (j + QUAD_RES > w - 50 * mm_nbr_pixel_x):
+                        (j < 50 * mm_nbr_pixel_x) or (j + QUAD_RES > w - 50 * mm_nbr_pixel_x):
                 categorie = 'bordure' # bordure general
             if (i < 150 * mm_nbr_pixel_y and j < 150 * mm_nbr_pixel_x) or \
-                    (i < 150 * mm_nbr_pixel_y and j > w - 150 * mm_nbr_pixel_x) or \
-                    (i > h - 200 * mm_nbr_pixel_y and j < 150 * mm_nbr_pixel_x) or \
-                    (i > h - 200 * mm_nbr_pixel_y and j > w - 150 * mm_nbr_pixel_x):
+                (i < 150 * mm_nbr_pixel_y and j > w - 150 * mm_nbr_pixel_x) or \
+                (i > h - 200 * mm_nbr_pixel_y and j < 150 * mm_nbr_pixel_x) or \
+                (i > h - 200 * mm_nbr_pixel_y and j > w - 150 * mm_nbr_pixel_x):
                 categorie = 'bordure' # bordure arucos
 
             # Détection des ArUco

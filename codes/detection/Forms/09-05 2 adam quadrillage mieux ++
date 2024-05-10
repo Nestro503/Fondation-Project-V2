@@ -35,8 +35,8 @@ QUAD_RES = 20
 
 ARRIV_COORDS = [
     ((365, 85, 475, 175), (0, 255, 255)),  # Jaune
-    ((365, 730, 475, 820), (0, 0, 255)),   # Rouge
-    ((1130, 85, 1230, 175), (255, 255, 0)), # Cyan
+    ((365, 730, 475, 820), (255, 0, 255)),   # Magenta
+    ((1130, 85, 1230, 175), (255, 0, 0)), # Bleu
     ((1130, 730, 1230, 820), (0, 255, 0))  # Vert
 ]
 
@@ -419,8 +419,7 @@ def process_grid(image, mm_nbr_pixel_x, mm_nbr_pixel_y, thickness, aruco_corners
     h, w, _ = image.shape
     grid = []
     cases = []  # Liste pour stocker les objets Case
-    out_cm_longueur = 10
-    out_cm_largeur = 10
+
 
     for i in range(0, h, QUAD_RES):
         row = []
