@@ -839,14 +839,14 @@ while True:
     cubes_rouge = [case.position for row in cases for case in row if case.categorie == 'cube' and case.couleur == 'rouge']
     cubes_gris = [case.position for row in cases for case in row if case.categorie == 'obstacle']
 
-    # Check coord des cases pour vérif ensuite
+        # Check coord des cases pour vérif ensuite
     #print("Coordonnées des cubes blanc :", cubes_blanc)
     #print("Coordonnées des cubes cyan :", cubes_cyan)
     #print("Coordonnées des cubes rouges :", cubes_rouge)
     #print("Coordonnées des cubes gris :", cubes_gris)
 
 
-    # Rassemblage des cubes de memes couleurs et centre des groupages
+        # Rassemblage des cubes de memes couleurs et centre des groupages
     cubes_blanc_centre = find_centers(cubes_blanc)
     unique_representatives_blanc = group_cubes(cubes_blanc_centre)
     cubes_cyan_centre = find_centers(cubes_cyan)
@@ -856,14 +856,14 @@ while True:
     cubes_gris_centre = find_centers(cubes_gris)
     unique_representatives_gris = group_cubes(cubes_gris_centre)
 
-    # Verif coord des groupages
+        # Verif coord des groupages
     #print("Unik blanc :", unique_representatives_blanc)
     #print("Unik cyan :", unique_representatives_cyan)
     #print("Unik rouge :", unique_representatives_rouge)
     #print("Unik gris :", unique_representatives_gris)
 
 
-    # Afficher les cercles de centres
+        # Afficher les cercles de centres
     for centres_blanc in unique_representatives_blanc:
         cv2.circle(img_with_grid,(centres_blanc[0],centres_blanc[1]), 3,(0,0,0),1)
     for centres_cyan in unique_representatives_cyan:
