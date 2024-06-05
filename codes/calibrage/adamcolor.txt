@@ -316,9 +316,7 @@ def recup_mask_hsv(img, img_hsv, coordblanc, coordcyan, coordrouge, coordgris):
 
 
 aruco_type = "DICT_ARUCO_ORIGINAL"
-
 arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
-
 arucoParams = cv2.aruco.DetectorParameters()
 
 if TEST != 1:
@@ -335,6 +333,9 @@ img = cv2.imread(nomImages[0])
 
 cpt = 0
 comptagemask = 0
+
+
+
 
 while True:
     if TEST == 0:

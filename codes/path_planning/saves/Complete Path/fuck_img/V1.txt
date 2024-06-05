@@ -1,0 +1,159 @@
+import pygame
+import random
+from queue import PriorityQueue
+
+# Définition des couleurs
+YELLOW = (255, 255, 0)
+CYAN = (0, 255, 255)
+MAGENTA = (255, 0, 255)
+GREEN = (0, 255, 0)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREY = (128, 128, 128)
+PURPLE = (128, 0, 128)
+ORANGE = (255, 165, 0)
+TURQUOISE = (64, 224, 208)
+
+# Dimensions de la fenêtre
+WIDTH = 1000
+HEIGHT = 750
+
+# Nombre de lignes et de colonnes dans la grille
+ROWS = 50
+COLS = 50
+
+# Taille d'une cellule dans la grille
+CELL_SIZE = WIDTH // ROWS
+
+# Initialisation de Pygame
+pygame.init()
+WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("A* Path Finding Algorithm")
+
+class Spot:
+    def __init__(self, row, col):
+        self.row = row
+        self.col = col
+        self.x = row * CELL_SIZE
+        self.y = col * CELL_SIZE
+        self.color = WHITE
+        self.neighbors = []
+        self.is_barrier = False
+
+    def get_pos(self):
+        return self.row, self.col
+
+    def is_start(self):
+        return self.color == ORANGE
+
+    def is_end(self):
+        return self.color == TURQUOISE
+
+    def is_deposit_yellow(self):
+        return self.color == YELLOW
+
+    def is_deposit_cyan(self):
+        return self.color == CYAN
+
+    def is_deposit_magenta(self):
+        return self.color == MAGENTA
+
+    def make_start(self):
+        self.color = ORANGE
+
+    def make_end(self):
+        self.color = TURQUOISE
+
+    def make_deposit_yellow(self):
+        self.color = YELLOW
+
+    def make_deposit_cyan(self):
+        self.color = CYAN
+
+    def make_deposit_magenta(self):
+        self.color = MAGENTA
+
+    def make_barrier(self):
+        self.is_barrier = True
+        self.color = BLACK
+
+    def draw(self, win):
+        pygame.draw.rect(win, self.color, (self.x, self.y, CELL_SIZE, CELL_SIZE))
+
+    def update_neighbors(self, grid):
+        self.neighbors = []
+        if self.row < ROWS - 1 and not grid[self.row + 1][self.col].is_barrier:
+            self.neighbors.append(grid[self.row + 1][self.col])
+        if self.row > 0 and not grid[self.row - 1][self.col].is_barrier:
+            self.neighbors.append(grid[self.row - 1][self.col])
+        if self.col < COLS - 1 and not grid[self.row][self.col + 1].is_barrier:
+            self.neighbors.append(grid[self.row][self.col + 1])
+        if self.col > 0 and not grid[self.row][self.col - 1].is_barrier:
+            self.neighbors.append(grid[self.row][self.col - 1])
+
+def create_grid():
+    grid = []
+    for row in range(ROWS):
+        grid.append([])
+        for col in range(COLS):
+            spot = Spot(row, col)
+            grid[row].append(spot)
+    return grid
+
+def create_deposit_zones(grid):
+    # Coin supérieur gauche (jaune)
+    grid[0][0].make_deposit_yellow()
+    grid[0][1].make_deposit_yellow()
+    grid[1][0].make_deposit_yellow()
+    grid[1][1].make_deposit_yellow()
+
+    # Coin supérieur droit (cyan)
+    grid[0][COLS - 1].make_deposit_cyan()
+    grid[0][COLS - 2].make_deposit_cyan()
+    grid[1][COLS - 1].make_deposit_cyan()
+    grid[1][COLS - 2].make_deposit_cyan()
+
+    # Coin inférieur gauche (magenta)
+    grid[ROWS - 1][0].make_deposit_magenta()
+    grid[ROWS - 1][1].make_deposit_magenta()
+    grid[ROWS - 2][0].make_deposit_magenta()
+    grid[ROWS - 2][1].make_deposit_magenta()
+
+    # Coin inférieur droit (vert)
+    grid[ROWS - 1][COLS - 1].make_barrier()
+    grid[ROWS - 1][COLS - 2].make_barrier()
+    grid[ROWS - 2][COLS - 1].make_barrier()
+    grid[ROWS - 2][COLS - 2].make_barrier()
+
+def draw_grid(win, grid):
+    win.fill(WHITE)
+    for row in grid:
+        for spot in row:
+            spot.draw(win)
+    for i in range(ROWS):
+        pygame.draw.line(win, GREY, (0, i * CELL_SIZE), (WIDTH, i * CELL_SIZE))
+    for j in range(COLS):
+        pygame.draw.line(win, GREY, (j * CELL_SIZE, 0), (j * CELL_SIZE, HEIGHT))
+    pygame.display.update()
+
+def main():
+    grid = create_grid()
+    create_deposit_zones(grid)
+
+    start = grid[0][0]
+    end = grid[0][COLS - 1]
+
+    run = True
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+
+        draw_grid(WIN, grid)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()

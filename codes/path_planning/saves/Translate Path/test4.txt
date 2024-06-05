@@ -3,7 +3,7 @@ import math
 from queue import PriorityQueue
 
 # Charger l'image
-image_path = "path_planning/img/test.png"  # Spécifiez le chemin de votre image
+image_path = "codes/path_planning/img/test.png"  # Spécifiez le chemin de votre image
 IMAGE = pygame.image.load(image_path)
 
 # Redimensionner l'image pour correspondre à la taille de l'écran

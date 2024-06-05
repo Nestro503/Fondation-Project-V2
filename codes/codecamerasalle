@@ -1,0 +1,29 @@
+import cv2 as cv
+import sys
+
+# Si vous avez une webcam intégrée dans votre ordinateur, alors celle qui filme la carte aura probalement l'id 1
+cap = cv.VideoCapture(1, cv.CAP_DSHOW)
+cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+cap.set(cv.CAP_PROP_FPS, 30)
+cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc(*'MJPG'))
+
+if not cap.isOpened():
+    print("Impossible d'ouvrir la webcam")
+    sys.exit()
+while True:
+    success, frame = cap.read()
+
+    # Si la frame est correctement lue, success est à True
+    if not success:
+        print("Impossible de recevoir la frame")
+        break
+    # Affichage de la frame
+    cv.imshow('frame', frame)
+    # Un appui sur la touche "q" met fin au programme
+    if cv.waitKey(1) == ord('q'):
+        break
+
+# Quand le programme est clos, on libère la caméra et on ferme les fenêtres.
+cap.release()
+cv.destroyAllWindows()
