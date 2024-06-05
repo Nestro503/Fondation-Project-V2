@@ -1,0 +1,30 @@
+import tkinter
+import urllib.request
+
+root_url = "http://192.168.86.71/"
+window = tkinter.Tk()
+window.title("GUI")
+
+def sendRequest(url):
+    try:
+        response = urllib.request.urlopen(url)
+        print(response.read().decode())  # Affiche la réponse du serveur
+    except Exception as e:
+        print(e)
+
+def turnOnLed():
+    sendRequest(root_url + "switchLedOn")
+    print("LED allumée")
+
+def turnOffLed():
+    sendRequest(root_url + "switchLedOff")
+    print("LED éteinte")
+
+# Création des boutons dans l'interface graphique
+btn_on = tkinter.Button(window, text="Allumer la LED", command=turnOnLed)
+btn_on.pack()
+
+btn_off = tkinter.Button(window, text="Éteindre la LED", command=turnOffLed)
+btn_off.pack()
+
+window.mainloop()
