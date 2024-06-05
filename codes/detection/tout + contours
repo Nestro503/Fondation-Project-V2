@@ -7,7 +7,15 @@ ARUCO_DICT = {
     "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
 }
 
+
 # Constantes
+
+# Mettre à 0 pour video, 1 pour photos
+TEST = 1
+
+# Mettre à 1 pour des prints de debug, 0 pour pas debug
+DEBUG = 1
+
 DISTANCE_COIN_ARUCO_X_MM = 2940
 DISTANCE_COIN_Y_MM = 1940
 
@@ -30,8 +38,6 @@ ARRIV_COORDS = [
     ((1130, 85, 1230, 175), (255, 255, 0)), # Cyan
     ((1130, 730, 1230, 820), (0, 255, 0))  # Vert
 ]
-
-
 
 
 def trouver_arucos_coins(corners, ids):
@@ -211,149 +217,26 @@ def aruco_display(corners, ids, image):
     return image
 
 
-def cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3, mm_nbr_pixel_x, mm_nbr_pixel_y, image):
+def cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3, mm_nbr_pixel_x,
+                 mm_nbr_pixel_y, image):
     if pixel_distance_x is not None and pixel_distance_y is not None and mm_nbr_pixel_x is not None and mm_nbr_pixel_y is not None:
 
-        # Dessin calib jaune
-        cv2.circle(image, (
-            int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 2 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
+        # Dessin calib blanc jaune cyan vert magenta rouge bleu
+        for i in range(1, 8):
+            cv2.circle(image, (
+                int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + i * LONGUEUR_CALIBRATION * mm_nbr_pixel_x),
+                int(y_aruco_3)), 6,
+                       (255, 255, 255), 1)  # -1 pour remplir le cercle
 
-        # Dessin calib cyan
-        cv2.circle(image, (
-            int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 3 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib vert
-        cv2.circle(image, (
-            int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 4 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib magenta
-        cv2.circle(image, (
-            int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 5 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib rouge
-        cv2.circle(image, (
-            int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 6 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib bleu
-        cv2.circle(image, (
-            int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 7 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-
-
-        ####################Dessins calib blancs !!
-        # Dessin calib blanc 1
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 1 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib blanc 2
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 2 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib blanc 3
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 3 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib blanc 4
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 4 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib blanc 5
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 5 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib blanc 6
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 6 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib blanc 7
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 7 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib blanc 8
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 8 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib blanc 9
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 9 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
-        # Dessin calib blanc 10
-        cv2.circle(image, (
-            int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 10 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 )), 4,
-                   (255, 255, 255), 2)  # -1 pour remplir le cercle
-
+        # Dessin calib des blancs
+        for i in range(1, 11):
+            cv2.circle(image, (
+                int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - i * LONGUEUR_CALIBRATION * mm_nbr_pixel_x),
+                int(y_aruco_1)), 6,
+                       (255, 255, 255), 1)  # -1 pour remplir le cercle
 
     return image
 
-
-def draw_grid(image, cell_size, thickness, aruco_corners, mask_gris, mask_rouge):
-    h, w, _ = image.shape
-    red_cubes_coords = []  # Liste pour stocker les coordonnées des cubes rouges
-
-    for i in range(0, h, cell_size):
-        for j in range(0, w, cell_size):
-            top_left = (j, i)
-            bottom_right = (j + cell_size, i + cell_size)
-            filled = False
-
-            # Vérifier la présence d'ArUco dans cette cellule
-            for id_, corners in aruco_corners.items():
-                aruco_top_left = (np.min(corners[:, 0]), np.min(corners[:, 1]))
-                aruco_bottom_right = (np.max(corners[:, 0]), np.max(corners[:, 1]))
-
-                if (aruco_top_left[0] < bottom_right[0] and aruco_bottom_right[0] > top_left[0] and
-                    aruco_top_left[1] < bottom_right[1] and aruco_bottom_right[1] > top_left[1]):
-                    cv2.rectangle(image, top_left, bottom_right, (255, 0, 0), -1)  # ArUco color
-                    filled = True
-                    break
-
-            # Vérifier les zones d'arrivée
-            if not filled:
-                for (coords, arrival_color) in ARRIV_COORDS:
-                    (x1, y1, x2, y2) = coords
-                    if not (bottom_right[0] <= x1 or top_left[0] >= x2 or bottom_right[1] <= y1 or top_left[1] >= y2):
-                        cv2.rectangle(image, top_left, bottom_right, arrival_color, -1)
-                        filled = True
-                        break
-
-            # Détecter la présence de rouge ou de gris dans la cellule
-            if not filled:
-                cell_mask_rouge = mask_rouge[i:i + cell_size, j:j + cell_size]
-                if cv2.countNonZero(cell_mask_rouge) > 0:
-                    cv2.rectangle(image, top_left, bottom_right, (0, 0, 255), -1)  # Rouge color
-                    filled = True
-                    red_cubes_coords.append((top_left, bottom_right))  # Enregistrer les coordonnées
-
-                cell_mask_gris = mask_gris[i:i + cell_size, j:j + cell_size]
-                if cv2.countNonZero(cell_mask_gris) > 0:
-                    cv2.rectangle(image, top_left, bottom_right, (0, 0, 0), -1)  # Gris color
-                    filled = True
-
-            # Dessiner les bords du quadrillage en noir si la cellule est sur les bords extérieurs de l'image
-            if not filled and (i == 0 or i + cell_size >= h or j == 0 or j + cell_size >= w):
-                cv2.rectangle(image, top_left, bottom_right, (0, 0, 0), -1)  # Bord noir
-                filled = True
-
-            # Dessiner les lignes de quadrillage si la cellule n'est pas remplie
-            if not filled:
-                cv2.rectangle(image, top_left, bottom_right, (0,0,0), thickness)  # Lignes de quadrillage
-
-    return image, red_cubes_coords  # Retourner l'image et les coordonnées des cubes rouges
 
 def recup_mask_hsv(img, img_hsv, coordblanc, coordcyan, coordrouge, coordgris):
 
@@ -390,7 +273,7 @@ def recup_mask_hsv(img, img_hsv, coordblanc, coordcyan, coordrouge, coordgris):
 
 
 
-     # Rouge
+    # Rouge
     circle_mask = np.zeros_like(img_hsv[:, :, 0], dtype=np.uint8)
     cv2.circle(circle_mask, coordrouge, 2, 255, -1)
     mean_hsv_rouge = cv2.mean(img_hsv, mask=circle_mask)[:3]
@@ -432,19 +315,83 @@ def recup_mask_hsv(img, img_hsv, coordblanc, coordcyan, coordrouge, coordgris):
 
     return mean_hsv_blanc, mask_blanc, mean_hsv_cyan, mask_cyan, mean_hsv_rouge, mask_rouge, mean_bgr_gris, mask_gris
 
+
+def draw_grid(image, cell_size, thickness, aruco_corners, mask_gris, mask_rouge):
+    h, w, _ = image.shape
+    red_cubes_coords = []  # Liste pour stocker les coordonnées des cubes rouges
+
+    for i in range(0, h, cell_size):
+        for j in range(0, w, cell_size):
+            top_left = (j, i)
+            bottom_right = (j + cell_size, i + cell_size)
+            filled = False
+
+            # Vérifier la présence d'ArUco dans cette cellule
+            for id_, corners in aruco_corners.items():
+                aruco_top_left = (np.min(corners[:, 0]), np.min(corners[:, 1]))
+                aruco_bottom_right = (np.max(corners[:, 0]), np.max(corners[:, 1]))
+
+                if (aruco_top_left[0] < bottom_right[0] and aruco_bottom_right[0] > top_left[0] and
+                        aruco_top_left[1] < bottom_right[1] and aruco_bottom_right[1] > top_left[1]):
+                    cv2.rectangle(image, top_left, bottom_right, (255, 0, 0), -1)  # ArUco color
+                    filled = True
+                    break
+
+            # Vérifier les zones d'arrivée
+            if not filled:
+                for (coords, arrival_color) in ARRIV_COORDS:
+                    (x1, y1, x2, y2) = coords
+                    if not (bottom_right[0] <= x1 or top_left[0] >= x2 or bottom_right[1] <= y1 or top_left[1] >= y2):
+                        cv2.rectangle(image, top_left, bottom_right, arrival_color, -1)
+                        filled = True
+                        break
+
+            # Détecter la présence de rouge ou de gris dans la cellule
+            if not filled:
+                cell_mask_rouge = mask_rouge[i:i + cell_size, j:j + cell_size]
+                if cv2.countNonZero(cell_mask_rouge) > 0:
+                    cv2.rectangle(image, top_left, bottom_right, (0, 0, 255), -1)  # Rouge color
+                    filled = True
+                    red_cubes_coords.append((top_left, bottom_right))  # Enregistrer les coordonnées
+
+                cell_mask_gris = mask_gris[i:i + cell_size, j:j + cell_size]
+                if cv2.countNonZero(cell_mask_gris) > 0:
+                    cv2.rectangle(image, top_left, bottom_right, (0, 0, 0), -1)  # Gris color
+                    filled = True
+
+            # Dessiner les bords du quadrillage en noir si la cellule est sur les bords extérieurs de l'image
+            if not filled and (i == 0 or i + cell_size >= h or j == 0 or j + cell_size >= w):
+                cv2.rectangle(image, top_left, bottom_right, (0, 0, 0), -1)  # Bord noir
+                filled = True
+
+            # Dessiner les lignes de quadrillage si la cellule n'est pas remplie
+            if not filled:
+                cv2.rectangle(image, top_left, bottom_right, (0,0,0), thickness)  # Lignes de quadrillage
+
+    return image, red_cubes_coords  # Retourner l'image et les coordonnées des cubes rouges
+
+
 def mouse_callback(event, x, y, flags, param):
     if event == cv2.EVENT_MOUSEMOVE:
         # Afficher les coordonnées du curseur en temps réel
         print("Coordonnées du curseur: X = {}, Y = {}".format(x, y))
 
 
-# Mettre à 0 pour video, 1 pour photos
-TEST = 1
+
+
+
+    #-----------------------------------------------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------------------------------------------
+    #-----------------------------------------LANCEMENT DU CODE CI-DESSOUS--------------------------------------------
+    #-----------------------------------------------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------------------------------------------
+
+
+
+
 
 aruco_type = "DICT_ARUCO_ORIGINAL"
-
 arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
-
 arucoParams = cv2.aruco.DetectorParameters()
 
 if TEST != 1:
@@ -461,6 +408,9 @@ nbImages = len(nomImages)
 img = cv2.imread(nomImages[0])
 
 cpt = 0
+comptagemask = 0
+
+
 
 while True:
     if TEST == 0:
@@ -481,97 +431,102 @@ while True:
     img = cv2.resize(img, (width, height), interpolation=cv2.INTER_CUBIC)
 
 
+    '''
+    cv2.imshow("image r", img)
+    imghsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
+    cv2.imshow("image hsv", imghsv)
+    #WTF
+    '''
+
+
+    #-------------------------------RECUPERATION PREMIERE IMAGE ET DETECTION DES COINS----------------------------------
 
     detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
-
     corners, ids, rejected = detector.detectMarkers(img)
+    # cv2.imshow("Original Image", img)
+    x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = trouver_arucos_coins(
+        corners, ids)
 
 
 
-    #cv2.imshow("Original Image", img)
 
+    #----------------------------------------------RECADREMENT DE L'IMAGE----------------------------------------------
 
-    x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = trouver_arucos_coins(corners, ids)
-
-
-
-    pts1 = np.float32([[x_aruco_0 - CONSTANTE_RECADRAGE, y_aruco_0 - CONSTANTE_RECADRAGE],[x_aruco_1 + CONSTANTE_RECADRAGE, y_aruco_1 - CONSTANTE_RECADRAGE],[x_aruco_3 - CONSTANTE_RECADRAGE, y_aruco_3 + CONSTANTE_RECADRAGE],[x_aruco_2 + CONSTANTE_RECADRAGE, y_aruco_2 + CONSTANTE_RECADRAGE]])
-    pts2 = np.float32([[0, 0], [IMAGE_RECADRE_LONGUEUR, 0], [0, IMAGE_RECADRE_LARGEUR], [IMAGE_RECADRE_LONGUEUR, IMAGE_RECADRE_LARGEUR]])
+    pts1 = np.float32([[x_aruco_0 - CONSTANTE_RECADRAGE, y_aruco_0 - CONSTANTE_RECADRAGE],
+                       [x_aruco_1 + CONSTANTE_RECADRAGE, y_aruco_1 - CONSTANTE_RECADRAGE],
+                       [x_aruco_3 - CONSTANTE_RECADRAGE, y_aruco_3 + CONSTANTE_RECADRAGE],
+                       [x_aruco_2 + CONSTANTE_RECADRAGE, y_aruco_2 + CONSTANTE_RECADRAGE]])
+    pts2 = np.float32([[0, 0], [IMAGE_RECADRE_LONGUEUR, 0], [0, IMAGE_RECADRE_LARGEUR],
+                       [IMAGE_RECADRE_LONGUEUR, IMAGE_RECADRE_LARGEUR]])
 
     M = cv2.getPerspectiveTransform(pts1, pts2)
-
-
     img_recadre = cv2.warpPerspective(img, M, (IMAGE_RECADRE_LONGUEUR, IMAGE_RECADRE_LARGEUR))
 
+        #Copie de l'image recadré pour y afficher des infos dessus
     img_recadre_copy = img_recadre.copy()
 
+
+
+
+    #---------------------------------DETECTION ARUCOS COIN ET ROBOT IMAGE RECADRE------------------------------------
+
+        #Recuperation des arucos
     corners_recadre, ids_recadre, rejected = detector.detectMarkers(img_recadre)
 
-    img_recadre = aruco_display(corners_recadre, ids_recadre, img_recadre)
+        #Affichage des arucos
+    img_recadre_copy = aruco_display(corners_recadre, ids_recadre, img_recadre_copy)
 
+        # Recuperations des coordonnées des arucos de coins
+    x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = trouver_arucos_coins(
+        corners_recadre, ids_recadre)
 
-    x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3 = trouver_arucos_coins(corners_recadre, ids_recadre)
+        #Recuperations des coordonnées de l'aruco du robot
     x_robot, y_robot, corners_robot = coordrobot(corners_recadre, ids_recadre)
 
-    pixel_distance_x, mm_nbr_pixel_x, pixel_nbr_mm_x, pixel_distance_y, mm_nbr_pixel_y, pixel_nbr_mm_y = calcul_pixel_mm(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3)
+        # Calcul de conversion pixel/mm et autre
+    pixel_distance_x, mm_nbr_pixel_x, pixel_nbr_mm_x, pixel_distance_y, mm_nbr_pixel_y, pixel_nbr_mm_y = calcul_pixel_mm(
+        x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3)
 
-    # Check if coordinates are not None and draw the circle
+        # Dessin hitbox robot (inutile pour l'instant)
     if x_robot is not None and y_robot is not None:
-        cv2.circle(img_recadre, (int(x_robot), int(y_robot)), int(RADIUS_ROBOT * (mm_nbr_pixel_x + mm_nbr_pixel_y) / 2),
-                   (234, 158, 236), 3)
+        cv2.circle(img_recadre_copy, (int(x_robot), int(y_robot)),
+                   int(RADIUS_ROBOT * (mm_nbr_pixel_x + mm_nbr_pixel_y) / 2), (234, 158, 236), 3)
     else:
         print("ArUco marker 137 not detected.")
 
 
-    img_recadre = cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3, mm_nbr_pixel_x, mm_nbr_pixel_y, img_recadre)
+        # Affichage de cercles autour de calibrations de couleurs (utiles quand test de nouvelles images pour check si ok)
+    #img_recadre_copy = cercle_calib(x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3, mm_nbr_pixel_x, mm_nbr_pixel_y, img_recadre_copy)
 
 
-    # Coordonnées des pixels à vérifier
+
+
+
+    #---------------------------------DETECTIONS DES COULEURS------------------------------------
+
+        # Coordonnées des couleurs de calibrations nous intéressant
+    pixel_blanc = (int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 1 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 ))
+    pixel_cyan = (int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 3 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 ))
     pixel_rouge = (int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 6 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3 ))
-    pixel_gris =  (int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 9 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 ))
+    pixel_gris =  (int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 10 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1 ))
 
-    # Obtenez la valeur BGR du pixel
-    bgr_pixel_rouge = img_recadre[pixel_rouge[1], pixel_rouge[0]]
-    bgr_pixel_gris = img_recadre[pixel_gris[1], pixel_gris[0]]
+        #Affichage de cercle pour check si bons endroits
+    cv2.circle(img_recadre_copy, pixel_blanc, 8, (255,255,255), 1)
+    cv2.circle(img_recadre_copy, pixel_cyan, 8, (255,255,255), 1)
+    cv2.circle(img_recadre_copy, pixel_rouge, 8, (255,255,255), 1)
+    cv2.circle(img_recadre_copy, pixel_gris, 8, (255,255,255), 1)
 
-    # Dessinez un cercle avec la couleur du pixel
-    cv2.circle(img_recadre, (int(IMAGE_RECADRE_LONGUEUR/2), int(IMAGE_RECADRE_LARGEUR/2)),
-               10,
-               (int(bgr_pixel_rouge[0]), int(bgr_pixel_rouge[1]), int(bgr_pixel_rouge[2])), -1)
-    cv2.circle(img_recadre, (int(IMAGE_RECADRE_LONGUEUR/2 + 20), int(IMAGE_RECADRE_LARGEUR/2 + 20)),
-               10,
-               (int(bgr_pixel_gris[0]), int(bgr_pixel_gris[1]), int(bgr_pixel_gris[2])), -1)
-
-    aruco_corners = {137: corners_robot} if corners_robot is not None else {}
-
-
-    # Coordonnées des couleurs de calibrations nous intéressant
-    pixel_blanc = (
-    int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 1 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3))
-    pixel_cyan = (
-    int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 3 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3))
-    pixel_rouge = (
-    int(x_aruco_3 + TAILLE_ARUCO_COIN * mm_nbr_pixel_x + 6 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_3))
-    pixel_gris = (
-    int(x_aruco_1 - TAILLE_ARUCO_COIN * mm_nbr_pixel_x - 10 * LONGUEUR_CALIBRATION * mm_nbr_pixel_x), int(y_aruco_1))
-
-    # Affichage de cercle pour check si bons endroits
-    cv2.circle(img_recadre_copy, pixel_blanc, 8, (255, 255, 255), 1)
-    cv2.circle(img_recadre_copy, pixel_cyan, 8, (255, 255, 255), 1)
-    cv2.circle(img_recadre_copy, pixel_rouge, 8, (255, 255, 255), 1)
-    cv2.circle(img_recadre_copy, pixel_gris, 8, (255, 255, 255), 1)
-
-    # Image en HSV pour y afficher des infos
-    img_recadre_hsv = cv2.cvtColor(img_recadre_copy, cv2.COLOR_BGR2HSV)
-    # Copie de l'image recadré HSV pour y afficher des infos dessus
+        #Image en HSV pour y afficher des infos
+    img_recadre_hsv = cv2.cvtColor(img_recadre, cv2.COLOR_BGR2HSV)
+    #Copie de l'image recadré HSV pour y afficher des infos dessus
     img_recadre_hsv_copy = img_recadre_hsv.copy()
 
-    # Recup les valeurs et les mask de chaque couleurs
+        # Recup les valeurs et les mask de chaque couleurs
     mean_hsv_blanc, mask_blanc, mean_hsv_cyan, mask_cyan, mean_hsv_rouge, mask_rouge, mean_bgr_gris, mask_gris = recup_mask_hsv(
-        img_recadre_copy, img_recadre_hsv_copy, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris)
+        img_recadre, img_recadre_hsv, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris)
 
-    # Affichage de cercles HSV pour check si bonne couleurs
+        # Affichage de cercles HSV pour check si bonne couleurs
     cv2.circle(img_recadre_hsv_copy, (pixel_blanc[0], pixel_blanc[1] - 20), 10,
                (mean_hsv_blanc[0], mean_hsv_blanc[1], mean_hsv_blanc[2]), -1)
     cv2.circle(img_recadre_hsv_copy, (pixel_blanc[0], pixel_blanc[1] - 20), 10, (0, 0, 0), 1)
@@ -581,13 +536,15 @@ while True:
     cv2.circle(img_recadre_hsv_copy, (pixel_rouge[0], pixel_rouge[1] - 20), 10,
                (mean_hsv_rouge[0], mean_hsv_rouge[1], mean_hsv_rouge[2]), -1)
     cv2.circle(img_recadre_hsv_copy, (pixel_rouge[0], pixel_rouge[1] - 20), 10, (0, 0, 0), 1)
-    # Affichage du cercle BGR pour check si bonne couleur
+        # Affichage du cercle BGR pour check si bonne couleur
     cv2.circle(img_recadre_copy, (pixel_gris[0], pixel_gris[1] + 20), 10,
                (mean_bgr_gris[0], mean_bgr_gris[1], mean_bgr_gris[2]), -1)
     cv2.circle(img_recadre_copy, (pixel_gris[0], pixel_gris[1] + 20), 10, (0, 0, 0), 1)
 
+
     #cv2.imshow("Image Recadre HSV Copy avec cercle couleurs", img_recadre_hsv_copy)
     #cv2.imshow("Image Recadre BGR Copy avec cercle couleurs", img_recadre_copy)
+
 
     top_row = cv2.hconcat([mask_blanc, mask_cyan])
     bottom_row = cv2.hconcat([mask_rouge, mask_gris])
@@ -596,6 +553,35 @@ while True:
                               interpolation=cv2.INTER_CUBIC)
 
     cv2.imshow("All Mask HSV", all_mask_hsv)
+
+
+
+    print("comptagemask = ", comptagemask)
+    if cv2.waitKey(1) & 0xFF == ord('n'):
+        comptagemask += 1
+        print("comptagemask = ", comptagemask)
+        if comptagemask == 6:
+            comptagemask = 0
+
+        #Afficher les mask
+    if comptagemask == 1:
+        cv2.imshow("All Mask HSV", all_mask_hsv)
+    elif comptagemask == 2:
+        cv2.imshow("Masque Blanc HSV", mask_blanc)
+    elif comptagemask == 3:
+        cv2.imshow("Masque Cyan HSV", mask_cyan)
+    elif comptagemask == 4:
+        cv2.imshow("Masque Rouge HSV", mask_rouge)
+    elif comptagemask == 5:
+        cv2.imshow("Masque Gris HSV", mask_gris)
+
+
+    print("")
+    print("----------------------------------------------------------------------------------------------------------")
+    print("")
+
+
+    aruco_corners = {137: corners_robot} if corners_robot is not None else {}
 
     if len(mask_gris.shape) > 2:  # Si le masque a plus d'un canal
         mask_gris = mask_gris[:, :, 0]  # Prendre le premier canal
