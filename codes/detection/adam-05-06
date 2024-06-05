@@ -11,8 +11,8 @@ ARUCO_DICT = {
 
 # Constantes
 
-# Mettre à 0 pour video, 1 pour photos
-TEST = 1
+# Mettre à 0 pour video, 1 pour photos, 2 pour vrai truc
+TEST = 2
 
 # Mettre à 1 pour des prints de debug, 0 pour pas debug
 DEBUG = 1
@@ -490,7 +490,7 @@ def process_grid(image, mm_nbr_pixel_x, mm_nbr_pixel_y, aruco_corners, mask_blan
         for j in range(len(cases[i])):
 
             #if cases[i][j].categorie == 'vide':
-                #cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 255, 255), 1)
+            #cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 255, 255), 1)
 
             if cases[i][j].categorie =='bordure':
                 cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (0, 0, 0), 1)
@@ -622,14 +622,21 @@ if TEST != 1:
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
 
+if TEST ==2:
+    cap = cv2.VideoCapture("./Videos/salle1.mp4")
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
+    ret, frame = cap.read()
+    if ret:
+        cv2.imwrite('./Images/photo_video.png', frame)
+    cap.release()
+
 # cv2.namedWindow("Image recadre")
 # cv2.setMouseCallback("Image recadre", mouse_callback)
 
 
-nomImages = ("./Images/PhotosCarte/salle1.jpg", "./Images/PhotosCarte/salle2.jpg", "./Images/PhotosCarte/salle3.jpg", "./Images/PhotosCarte/salle4.jpg", "./Images/PhotosCarte/salle5.jpg", "./Images/PhotosCarte/salle6.jpg" )
+nomImages = ("./Images/photo_video.png","./Images/PhotosCarte/salle1.jpg", "./Images/PhotosCarte/salle2.jpg", "./Images/PhotosCarte/salle3.jpg", "./Images/PhotosCarte/salle4.jpg", "./Images/PhotosCarte/salle5.jpg", "./Images/PhotosCarte/salle6.jpg" )
 nbImages = len(nomImages)
-
-img = cv2.imread(nomImages[0])
 
 cpt = 0
 comptagemask = 0
@@ -645,6 +652,8 @@ while True:
             cpt += 1
             if cpt == nbImages:
                 cpt = 0
+    elif TEST == 2:
+        img = cv2.imread('./Images/photo_video.png')
 
     h, w, _ = img.shape
     print("Lecture d'image réussie. Shape: {}".format((h, w)))
