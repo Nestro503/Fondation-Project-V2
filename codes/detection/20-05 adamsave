@@ -34,10 +34,10 @@ RADIUS_ROBOT = 100
 QUAD_RES = 20
 
 ARRIV_COORDS = [
-    ((365, 85, 475, 175), (0, 255, 255)),  # Jaune
-    ((365, 730, 475, 820), (0, 0, 255)),   # Rouge
-    ((1130, 85, 1230, 175), (255, 255, 0)), # Cyan
-    ((1130, 730, 1230, 820), (0, 255, 0))  # Vert
+    ((365, 85, 475, 175), (0, 255, 255), 'jaune'),  # Jaune
+    ((365, 730, 475, 820), (255, 0, 255), 'magenta'),   # Magenta
+    ((1130, 85, 1230, 175), (255, 0, 0), 'bleu'), # Bleu
+    ((1130, 730, 1230, 820), (0, 255, 0), 'vert')  # Vert
 ]
 
 #coef_rouge = distance / valeur_rouge
@@ -326,17 +326,17 @@ def recup_mask_hsv(img, img_hsv, coordblanc, coordcyan, coordrouge, coordgris):
     return mean_hsv_blanc, mask_blanc, mean_hsv_cyan, mask_cyan, mean_hsv_rouge, mask_rouge, mean_bgr_gris, mask_gris
 
 
-def draw_grid(image, cell_size, thickness, aruco_corners, mask_blanc, mask_cyan, mask_rouge, mask_gris, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris):
+def draw_grid(image, QUAD_RES, thickness, aruco_corners, mask_blanc, mask_cyan, mask_rouge, mask_gris):
     h, w, _ = image.shape
     blanc_cubes_coords = []  # Liste pour stocker les coordonnées des cubes blancs
     cyan_cubes_coords = []  # Liste pour stocker les coordonnées des cubes cyans
     rouge_cubes_coords = []  # Liste pour stocker les coordonnées des cubes rouges
     gris_cubes_coords = []  # Liste pour stocker les coordonnées des cubes gris
 
-    for i in range(0, h, cell_size):
-        for j in range(0, w, cell_size):
+    for i in range(0, h, QUAD_RES):
+        for j in range(0, w, QUAD_RES):
             top_left = (j, i)
-            bottom_right = (j + cell_size, i + cell_size)
+            bottom_right = (j + QUAD_RES, i + QUAD_RES)
             filled = False
 
             # Vérifier la présence d'ArUco dans cette cellule
@@ -360,15 +360,15 @@ def draw_grid(image, cell_size, thickness, aruco_corners, mask_blanc, mask_cyan,
                         break
 
             # Dessiner les bords du quadrillage en noir si la cellule est sur les bords extérieurs de l'image
-            if not filled and (i == 0 or i + cell_size >= h or j == 0 or j + cell_size >= w):
+            if not filled and (i == 0 or i + QUAD_RES >= h or j == 0 or j + QUAD_RES >= w):
                 cv2.rectangle(image, top_left, bottom_right, (0, 0, 0), -1)  # Bord noir
                 filled = True
 
             # Dessiner les bords du quadrillage en noir si la cellule est sur les arucos de coin
-            if (not filled and (i <= 3 * cell_size and j <= 4 * cell_size) or
-                    (i <= 3 * cell_size and j >= w - 4 * cell_size) or
-                    (i >= h - 3 * cell_size and j <= 4 * cell_size) or
-                    (i >= h - 3 * cell_size and j >= w - 4 * cell_size)):
+            if (not filled and (i <= 3 * QUAD_RES and j <= 4 * QUAD_RES) or
+                    (i <= 3 * QUAD_RES and j >= w - 4 * QUAD_RES) or
+                    (i >= h - 3 * QUAD_RES and j <= 4 * QUAD_RES) or
+                    (i >= h - 3 * QUAD_RES and j >= w - 4 * QUAD_RES)):
                 cv2.rectangle(image, top_left, bottom_right, (0, 0, 0), -1)  # Bord noir
                 filled = True
 
@@ -376,25 +376,25 @@ def draw_grid(image, cell_size, thickness, aruco_corners, mask_blanc, mask_cyan,
             # Détecter la présence de cube de couleurs dans la cellule
             if not filled:
 
-                cell_mask_blanc = mask_blanc[i:i + cell_size, j:j + cell_size]
+                cell_mask_blanc = mask_blanc[i:i + QUAD_RES, j:j + QUAD_RES]
                 if cv2.countNonZero(cell_mask_blanc) > 0:
                     cv2.rectangle(image, top_left, bottom_right, (255, 255, 255), -1)  # blanc color
                     filled = True
                     blanc_cubes_coords.append((top_left, bottom_right))  # Enregistrer les coordonnées
 
-                cell_mask_cyan = mask_cyan[i:i + cell_size, j:j + cell_size]
+                cell_mask_cyan = mask_cyan[i:i + QUAD_RES, j:j + QUAD_RES]
                 if cv2.countNonZero(cell_mask_cyan) > 0:
                     cv2.rectangle(image, top_left, bottom_right, (255, 0, 0), -1)  # cyan color
                     filled = True
                     cyan_cubes_coords.append((top_left, bottom_right))  # Enregistrer les coordonnées
 
-                cell_mask_rouge = mask_rouge[i:i + cell_size, j:j + cell_size]
+                cell_mask_rouge = mask_rouge[i:i + QUAD_RES, j:j + QUAD_RES]
                 if cv2.countNonZero(cell_mask_rouge) > 0:
                     cv2.rectangle(image, top_left, bottom_right, (0, 0, 255), -1)  # Rouge color
                     filled = True
                     rouge_cubes_coords.append((top_left, bottom_right))  # Enregistrer les coordonnées
 
-                cell_mask_gris = mask_gris[i:i + cell_size, j:j + cell_size]
+                cell_mask_gris = mask_gris[i:i + QUAD_RES, j:j + QUAD_RES]
                 if cv2.countNonZero(cell_mask_gris) > 0:
                     cv2.rectangle(image, top_left, bottom_right, (0, 0, 0), -1)  # Gris color
                     filled = True
@@ -407,20 +407,144 @@ def draw_grid(image, cell_size, thickness, aruco_corners, mask_blanc, mask_cyan,
     return image, blanc_cubes_coords, cyan_cubes_coords, rouge_cubes_coords, gris_cubes_coords  # Retourner l'image et les coordonnées des cubes
 
 
+class Case:
+    def __init__(self, position, categorie, couleur, voisins):
+        self.position = position  # tuple (top_left, bottom_right)
+        self.categorie = categorie  # 'bordure', 'cube', 'zone d'arrivée', 'vide'
+        self.couleur = couleur  # 'blanc', 'cyan', 'rouge', 'gris', None
+        self.voisins = voisins  # Liste des cases voisines
+
+
+def process_grid(image, mm_nbr_pixel_x, mm_nbr_pixel_y, aruco_corners, mask_blanc, mask_cyan, mask_rouge, mask_gris):
+    h, w, _ = image.shape
+    cases = []  # Liste pour stocker les objets Case
+
+    for i in range(0, h, QUAD_RES):
+        row = [] #rangées
+        for j in range(0, w, QUAD_RES):
+            top_left = (j, i)
+            bottom_right = (j + QUAD_RES, i + QUAD_RES)
+            categorie = 'vide'
+            couleur = None
+
+
+            # Bordures
+            if (i < 50 * mm_nbr_pixel_y) or (i + QUAD_RES > h - 50 * mm_nbr_pixel_y) or \
+                    (j < 50 * mm_nbr_pixel_x) or (j + QUAD_RES > w - 50 * mm_nbr_pixel_x):
+                categorie = 'bordure' # bordure general
+            if (i < 150 * mm_nbr_pixel_y and j < 150 * mm_nbr_pixel_x) or \
+                    (i < 150 * mm_nbr_pixel_y and j > w - 150 * mm_nbr_pixel_x) or \
+                    (i > h - 200 * mm_nbr_pixel_y and j < 150 * mm_nbr_pixel_x) or \
+                    (i > h - 200 * mm_nbr_pixel_y and j > w - 150 * mm_nbr_pixel_x):
+                categorie = 'bordure' # bordure arucos
+
+            # Détection des ArUco
+            for id_, corners in aruco_corners.items():
+                aruco_top_left = (np.min(corners[:, 0]), np.min(corners[:, 1]))
+                aruco_bottom_right = (np.max(corners[:, 0]), np.max(corners[:, 1]))
+                if (aruco_top_left[0] < bottom_right[0] and aruco_bottom_right[0] > top_left[0] and
+                        aruco_top_left[1] < bottom_right[1] and aruco_bottom_right[1] > top_left[1]):
+                    categorie = 'aruco'
+                    break
+
+            # Zones d'arrivée
+            if categorie == 'vide':
+                for (coords, arrival_color, color) in ARRIV_COORDS:
+                    (x1, y1, x2, y2) = coords
+                    if not (bottom_right[0] <= x1 or top_left[0] >= x2 or bottom_right[1] <= y1 or top_left[1] >= y2):
+                        categorie = 'zonedepot'
+                        couleur = color
+                        break
+
+            # Détection des cubes
+            if categorie == 'vide':
+                masks = {'blanc': mask_blanc, 'cyan': mask_cyan, 'rouge': mask_rouge, 'gris': mask_gris}
+                for clr, mask in masks.items():
+                    cell_mask = mask[i:i + QUAD_RES, j:j + QUAD_RES]
+                    if cv2.countNonZero(cell_mask) > 0:
+                        if clr == 'gris':
+                            categorie = 'obstacle'
+                        else:
+                            categorie = 'cube'
+                            couleur = clr
+                        break
+
+            # Création de l'objet Case
+            new_case = Case((top_left, bottom_right), categorie, couleur, [])
+            row.append(new_case)
+        cases.append(row)
+
+
+    # Ajout de la logique pour détecter les obstacles avec la nouvelle condition
+    for i in range(len(cases)):
+        for j in range(len(cases[i])):
+            if cases[i][j].categorie == 'obstacle':
+                left_case = cases[i][j-1] if j > 0 else None
+                top_case = cases[i-1][j] if i > 0 else None
+                if left_case and top_case and ((left_case.categorie == 'cube') or (top_case.categorie == 'cube')):
+                    cases[i][j].categorie = 'vide'
+                    print("case", i, j,"remove obstacle collé")
+
+    #Dessinnnnn
+    for i in range(len(cases)):
+        for j in range(len(cases[i])):
+
+            #if cases[i][j].categorie == 'vide':
+                #cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 255, 255), 1)
+
+            if cases[i][j].categorie =='bordure':
+                cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (0, 0, 0), 1)
+
+            elif cases[i][j].categorie == 'aruco':
+                cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 120, 120), -1)
+
+            elif cases[i][j].categorie == 'obstacle':
+                cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (30, 30, 30), -1)
+
+            elif cases[i][j].categorie == 'zonedepot':
+                if cases[i][j].couleur == 'jaune':
+                    cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (0, 255, 255), 2)
+                elif cases[i][j].couleur == 'magenta':
+                    cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 0, 255), 2)
+                elif cases[i][j].couleur == 'bleu':
+                    cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 0, 0), 2)
+                elif cases[i][j].couleur == 'vert':
+                    cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (0, 255, 0), 2)
+
+            elif cases[i][j].categorie == 'cube':
+                if cases[i][j].couleur == 'blanc':
+                    cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 255, 255), -1)
+                elif cases[i][j].couleur == 'cyan':
+                    cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 255, 0), -1)
+                elif cases[i][j].couleur == 'rouge':
+                    cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (0, 0, 255), -1)
+
+
+
+    # Calcul des voisins pour chaque case
+    for i in range(len(cases)):
+        for j in range(len(cases[i])):
+            voisins = []
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Haut, bas, gauche, droite
+            for di, dj in directions:
+                ni, nj = i + di, j + dj
+                if 0 <= ni < len(cases) and 0 <= nj < len(cases[0]):
+                    voisins.append(cases[ni][nj])
+            cases[i][j].voisins = voisins
+
+    return image, cases
+
+
 def find_centers(cubes):
     """ Convert corner coordinates to center coordinates. """
     return [(int((x1 + x2) / 2), int((y1 + y2) / 2)) for (x1, y1), (x2, y2) in cubes]
-
-
-def calculate_distance(p1, p2):
-    return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
 
 
 def are_adjacent(c1, c2):
     """ Check if centers are adjacent considering each square has a side of 20 units. """
     x1, y1 = c1
     x2, y2 = c2
-    return abs(x1 - x2) <= 20 and abs(y1 - y2) <= 20
+    return abs(x1 - x2) <= QUAD_RES and abs(y1 - y2) <= QUAD_RES
 
 
 def find_group(c, groups):
@@ -434,34 +558,47 @@ def find_group(c, groups):
 def group_cubes(centers):
     """ Group cubes that are adjacent into single representative groups. """
     groups = []
+    representatives = []
     for center in centers:
         group_index = find_group(center, groups)
         if group_index is not None:
             groups[group_index].add(center)
         else:
             groups.append({center})
+
+    for group in groups:
+        liste_x = []
+        liste_y = []
+        #print("group:", group)
+        for (x, y) in group:
+            liste_x.append(x)
+            liste_y.append(y)
+
+        # Calcul des valeurs minimales et maximales pour x et y
+        min_x = min(liste_x)
+        max_x = max(liste_x)
+        min_y = min(liste_y)
+        max_y = max(liste_y)
+        # Affichage des résultats
+        #print(f"Min X: {min_x}, Max X: {max_x}")
+        #print(f"Min Y: {min_y}, Max Y: {max_y}")
+        coordrepresentatives = (int((max_x + min_x)/2), int((max_y + min_y)/2))
+        #print("coordrepresentatives:", coordrepresentatives)
+        representatives.append(coordrepresentatives)
+
+
     # Select one representative from each group
-    representatives = [list(group)[0] for group in groups]
+    #print("representatives:", representatives)
     return representatives
 
-def mouse_callback(event, x, y, flags, param):
-    if event == cv2.EVENT_MOUSEMOVE:
-        # Afficher les coordonnées du curseur en temps réel
-        print("Coordonnées du curseur: X = {}, Y = {}".format(x, y))
 
 
 
 
 
-    #-----------------------------------------------------------------------------------------------------------------
-    #-----------------------------------------------------------------------------------------------------------------
-    #-----------------------------------------LANCEMENT DU CODE CI-DESSOUS--------------------------------------------
-    #-----------------------------------------------------------------------------------------------------------------
-    #-----------------------------------------------------------------------------------------------------------------
 
-
-
-
+def calculate_distance(p1, p2):
+    return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
 
 
     #-----------------------------------------------------------------------------------------------------------------
@@ -488,8 +625,8 @@ if TEST != 1:
 # cv2.namedWindow("Image recadre")
 # cv2.setMouseCallback("Image recadre", mouse_callback)
 
-#nomImages = ("./Images/mapframevideo.jpg", "./Images/map3adam.jpg", "./Images/map1.jpg", )
-nomImages = ("./Images/salle1.jpg", "./Images/salle2.jpg", "./Images/salle3.jpg", "./Images/salle4.jpg", "./Images/salle5.jpg", "./Images/salle6.jpg" )
+
+nomImages = ("./Images/PhotosCarte/salle1.jpg", "./Images/PhotosCarte/salle2.jpg", "./Images/PhotosCarte/salle3.jpg", "./Images/PhotosCarte/salle4.jpg", "./Images/PhotosCarte/salle5.jpg", "./Images/PhotosCarte/salle6.jpg" )
 nbImages = len(nomImages)
 
 img = cv2.imread(nomImages[0])
@@ -575,6 +712,7 @@ while True:
     x_robot, y_robot, corners_robot = coordrobot(corners_recadre, ids_recadre)
 
     # Calcul de conversion pixel/mm et autre
+    #pixel/mm =  mm_nbr_pixel      et mm/pixel = pixel_nbr_mm
     pixel_distance_x, mm_nbr_pixel_x, pixel_nbr_mm_x, pixel_distance_y, mm_nbr_pixel_y, pixel_nbr_mm_y = calcul_pixel_mm(
         x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3)
 
@@ -673,53 +811,76 @@ while True:
     print("")
 
 
+
+
     #--------------------------------- QUADRILLAGE ------------------------------------
 
+
+    # Initialisation des coins ArUco, à ajuster selon votre application
     aruco_corners = {137: corners_robot} if corners_robot is not None else {}
 
-    if len(mask_blanc.shape) > 2:  # Si le masque a plus d'un canal
-        mask_blanc = mask_blanc[:, :, 0]  # Prendre le premier canal
-
-    if len(mask_cyan.shape) > 2:  # Si le masque a plus d'un canal
-        mask_cyan = mask_cyan[:, :, 0]  # Prendre le premier canal
-
-    if len(mask_rouge.shape) > 2:  # Si le masque a plus d'un canal
-        mask_rouge = mask_rouge[:, :, 0]  # Prendre le premier canal
-
-    if len(mask_gris.shape) > 2:  # Si le masque a plus d'un canal
-        mask_gris = mask_gris[:, :, 0]  # Prendre le premier canal
-
-
-    img_with_grid, cube_blanc, cube_cyan, cube_rouge, cube_gris = draw_grid(img_recadre, QUAD_RES, 1, aruco_corners,mask_blanc, mask_cyan, mask_rouge, mask_gris, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris)
-    print("Coordonnées des cubes blanc :", cube_blanc)
-    print("Coordonnées des cubes cyan :", cube_cyan)
-    print("Coordonnées des cubes rouges :", cube_rouge)
-    print("Coordonnées des cubes gris :", cube_gris)
-    cv2.imshow("Image quadrillee", img_with_grid)
+    # Conversion des masques en niveaux de gris si nécessaire
+    mask_blanc = cv2.cvtColor(mask_blanc, cv2.COLOR_BGR2GRAY) if len(mask_blanc.shape) > 2 else mask_blanc
+    mask_cyan = cv2.cvtColor(mask_cyan, cv2.COLOR_BGR2GRAY) if len(mask_cyan.shape) > 2 else mask_cyan
+    mask_rouge = cv2.cvtColor(mask_rouge, cv2.COLOR_BGR2GRAY) if len(mask_rouge.shape) > 2 else mask_rouge
+    mask_gris = cv2.cvtColor(mask_gris, cv2.COLOR_BGR2GRAY) if len(mask_gris.shape) > 2 else mask_gris
 
 
 
-    print("")
-    print("----------------------------------------------------------------------------------------------------------")
-    print("")
+    # Appel à la nouvelle fonction de traitement
+    img_with_grid, cases = process_grid(img_recadre, mm_nbr_pixel_x, mm_nbr_pixel_y, aruco_corners,
+                                        mask_blanc, mask_cyan, mask_rouge, mask_gris)
 
 
 
-    cube_blanc_centre = find_centers(cube_blanc)
-    unique_representatives_blanc = group_cubes(cube_blanc_centre)
-    cube_cyan_centre = find_centers(cube_cyan)
-    unique_representatives_cyan = group_cubes(cube_cyan_centre)
-    cube_rouge_centre = find_centers(cube_rouge)
-    unique_representatives_rouge = group_cubes(cube_rouge_centre)
-    cube_gris_centre = find_centers(cube_gris)
-    unique_representatives_gris = group_cubes(cube_gris_centre)
+    # Extraction et affichage des coordonnées des cubes par couleur
+    cubes_blanc = [case.position for row in cases for case in row if case.categorie == 'cube' and case.couleur == 'blanc']
+    cubes_cyan = [case.position for row in cases for case in row if case.categorie == 'cube' and case.couleur == 'cyan']
+    cubes_rouge = [case.position for row in cases for case in row if case.categorie == 'cube' and case.couleur == 'rouge']
+    cubes_gris = [case.position for row in cases for case in row if case.categorie == 'obstacle']
 
+    # Check coord des cases pour vérif ensuite
+    #print("Coordonnées des cubes blanc :", cubes_blanc)
+    #print("Coordonnées des cubes cyan :", cubes_cyan)
+    #print("Coordonnées des cubes rouges :", cubes_rouge)
+    #print("Coordonnées des cubes gris :", cubes_gris)
+
+
+    # Rassemblage des cubes de memes couleurs et centre des groupages
+    cubes_blanc_centre = find_centers(cubes_blanc)
+    unique_representatives_blanc = group_cubes(cubes_blanc_centre)
+    cubes_cyan_centre = find_centers(cubes_cyan)
+    unique_representatives_cyan = group_cubes(cubes_cyan_centre)
+    cubes_rouge_centre = find_centers(cubes_rouge)
+    unique_representatives_rouge = group_cubes(cubes_rouge_centre)
+    cubes_gris_centre = find_centers(cubes_gris)
+    unique_representatives_gris = group_cubes(cubes_gris_centre)
+
+    # Verif coord des groupages
     print("Unik blanc :", unique_representatives_blanc)
     print("Unik cyan :", unique_representatives_cyan)
     print("Unik rouge :", unique_representatives_rouge)
     print("Unik gris :", unique_representatives_gris)
 
 
+    # Afficher les cercles de centres
+    for centres_blanc in unique_representatives_blanc:
+        cv2.circle(img_with_grid,(centres_blanc[0],centres_blanc[1]), 3,(0,0,0),1)
+    for centres_cyan in unique_representatives_cyan:
+        cv2.circle(img_with_grid,(centres_cyan[0],centres_cyan[1]), 3,(0,0,0),1)
+    for centres_rouge in unique_representatives_rouge:
+        cv2.circle(img_with_grid,(centres_rouge[0],centres_rouge[1]), 3,(0,0,0),1)
+    for centres_gris in unique_representatives_gris:
+        cv2.circle(img_with_grid,(centres_gris[0],centres_gris[1]), 3,(255,255,255),1)
+
+
+
+        # Affichage de l'image quadrillée
+    cv2.imshow("Image quadrillee", img_with_grid)
+
+
+
+    '''
     print("Distances à Aruco :")
     for coord in unique_representatives_blanc:
         distance_to_aruco = calculate_distance(coord, arucoop)
@@ -730,6 +891,11 @@ while True:
     # Afficher la coordonnée la plus proche et la distance correspondante
     print("La coordonnée la plus proche de Aruco est :", closest_coord)
     print("Avec une distance de :", min_distance)
+    '''
+
+
+
+
 
 
 
@@ -737,6 +903,8 @@ while True:
     print("")
     print("----------------------------------------------------------------------------------------------------------")
     print("")
+
+
 
 
 

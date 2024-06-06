@@ -1,0 +1,72 @@
+import tkinter
+import urllib.request
+
+root_url = "http://192.168.86.71/"
+window = tkinter.Tk()
+window.title("GUI")
+
+def sendRequest(url):
+    try:
+        response = urllib.request.urlopen(url)
+        print(response.read().decode())  # Affiche la réponse du serveur
+    except Exception as e:
+        print(e)
+
+def turnOnLed():
+    sendRequest(root_url + "switchLedOn")
+    print("LED allumée")
+
+def turnOffLed():
+    sendRequest(root_url + "switchLedOff")
+    print("LED éteinte")
+
+def moveForward():
+    sendRequest(root_url + "moveForward")
+    print("Avancer")
+
+def moveBackward():
+    sendRequest(root_url + "moveBackward")
+    print("Reculer")
+
+def turnLeft():
+    sendRequest(root_url + "turnLeft")
+    print("Tourner à gauche")
+
+def turnRight():
+    sendRequest(root_url + "turnRight")
+    print("Tourner à droite")
+
+def stop():
+    sendRequest(root_url + "stop")
+    print("Arrêt")
+
+def catch():
+    sendRequest(root_url + "catch")
+    print("Catch")
+
+# Création des boutons dans l'interface graphique
+btn_on = tkinter.Button(window, text="Allumer la LED", command=turnOnLed)
+btn_on.pack()
+
+btn_off = tkinter.Button(window, text="Éteindre la LED", command=turnOffLed)
+btn_off.pack()
+
+btn_forward = tkinter.Button(window, text="Avancer", command=moveForward)
+btn_forward.pack()
+
+btn_backward = tkinter.Button(window, text="Reculer", command=moveBackward)
+btn_backward.pack()
+
+btn_left = tkinter.Button(window, text="Gauche", command=turnLeft)
+btn_left.pack()
+
+btn_right = tkinter.Button(window, text="Droite", command=turnRight)
+btn_right.pack()
+
+btn_stop = tkinter.Button(window, text="Arrêter", command=stop)
+btn_stop.pack()
+
+btn_catch = tkinter.Button(window, text="Catch", command=catch)
+btn_catch.pack()
+
+window.mainloop()

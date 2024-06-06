@@ -1,0 +1,85 @@
+#include "Arduino.h"
+#include "ESP8266WiFi.h"
+#include "ESP8266WebServer.h"
+
+// Définition de la broche de la LED intégrée
+#define LED_BUILTIN 2  // GPIO2 (D4 sur certaines cartes)
+
+// Informations de connexion WiFi
+const char *SSID = "Wifi Erwan";
+const char *PASSWORD = "sisilafamille";
+
+// Gestion des événements du WiFi
+void onConnected(const WiFiEventStationModeConnected &event);
+void onGotIP(const WiFiEventStationModeGotIP &event);
+
+// Objet WebServer
+ESP8266WebServer serverWeb(80);
+
+// Fonctions du serveur Web
+void switchLedOn()
+{
+  digitalWrite(LED_BUILTIN, LOW);  // La LED intégrée s'allume avec un LOW
+  Serial.println("LED intégrée allumée");
+  serverWeb.send(200, "text/html", "Led On");
+}
+
+void switchLedOff()
+{
+  digitalWrite(LED_BUILTIN, HIGH);  // La LED intégrée s'éteint avec un HIGH
+  Serial.println("LED intégrée éteinte");
+  serverWeb.send(200, "text/html", "Led Off");
+}
+
+void handleRoot()
+{
+  serverWeb.send(200, "text/html", "Page principale");
+}
+
+void setup()
+{
+  // Mise en place d'une liaison série
+  Serial.begin(9600L);
+  delay(100);
+
+  // Configuration des entrées/sorties
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);  // Éteindre la LED par défaut
+
+  // Mode de connexion
+  WiFi.mode(WIFI_STA);
+
+  // Démarrage de la connexion
+  WiFi.begin(SSID, PASSWORD);
+
+  static WiFiEventHandler onConnectedHandler = WiFi.onStationModeConnected(onConnected);
+  static WiFiEventHandler onGotIPHandler = WiFi.onStationModeGotIP(onGotIP);
+
+  // Mise en place du serveur WebServer
+  serverWeb.on("/switchLedOn", switchLedOn);
+  serverWeb.on("/switchLedOff", switchLedOff);
+  serverWeb.on("/", handleRoot);
+  serverWeb.begin();
+}
+
+void loop()
+{
+  if (WiFi.isConnected())
+  {
+    serverWeb.handleClient();
+  }
+}
+
+void onConnected(const WiFiEventStationModeConnected &event)
+{
+  Serial.println("WiFi connecté");
+}
+
+void onGotIP(const WiFiEventStationModeGotIP &event)
+{
+  Serial.println("Adresse IP : " + WiFi.localIP().toString());
+  Serial.println("Passerelle IP : " + WiFi.gatewayIP().toString());
+  Serial.println("DNS IP : " + WiFi.dnsIP().toString());
+  Serial.print("Puissance de réception : ");
+  Serial.println(WiFi.RSSI());
+}
