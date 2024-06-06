@@ -1,0 +1,43 @@
+import time
+import urllib.request
+
+root_url = "http://192.168.86.71/"
+
+def sendRequest(url):
+    try:
+        response = urllib.request.urlopen(url)
+        print(response.read().decode())  # Affiche la réponse du serveur
+    except Exception as e:
+        print(e)
+
+def moveForward(duration):
+    sendRequest(root_url + "moveForward")
+    time.sleep(duration)
+    sendRequest(root_url + "stop")
+
+def moveBackward(duration):
+    sendRequest(root_url + "moveBackward")
+    time.sleep(duration)
+    sendRequest(root_url + "stop")
+
+def turnLeft(duration):
+    sendRequest(root_url + "turnLeft")
+    time.sleep(duration)
+    sendRequest(root_url + "stop")
+
+def turnRight(duration):
+    sendRequest(root_url + "turnRight")
+    time.sleep(duration)
+    sendRequest(root_url + "stop")
+
+def executeTrajectory():
+    # Définir les durées en secondes
+    move_duration = 0.1  # Durée pour avancer
+    turn_duration = 0.1  # Durée pour tourner
+
+    moveForward(move_duration)
+    time.sleep(1)  # Pause entre les étapes
+    turnRight(turn_duration)
+    time.sleep(1)  # Pause entre les étapes
+
+executeTrajectory()
