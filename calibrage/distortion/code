@@ -1,0 +1,11 @@
+IMAGES = "./Images/mapvideoframe.jpg"
+
+
+camera_matrix = np.load('camera_matrix.npy')
+dist_coeffs = np.load('dist_coeffs.npy')
+
+
+image = cv2.imread(IMAGES)
+undistorted_image = cv2.undistort(image, camera_matrix, dist_coeffs)
+cv2.imshow('Undistorted Image', undistorted_image)
+cv2.waitKey(0)
