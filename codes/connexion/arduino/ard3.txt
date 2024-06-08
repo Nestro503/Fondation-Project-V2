@@ -1,0 +1,140 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <Servo.h>
+
+// WiFi
+const char* ssid = "Wifi Erwan";
+const char* password = "sisilafamille";
+
+// Moteurs DC
+const int pwmMotorA = D1; // Enable/speed motor A
+const int dirMotorA = D3; // Direction motor A
+const int pwmMotorB = D2; // Enable/speed motor B
+const int dirMotorB = D4; // Direction motor B
+
+// Servomoteurs
+Servo servo1;
+Servo servo2;
+const int servoPin1 = D5; // Pin pour le premier servomoteur
+const int servoPin2 = D6; // Pin pour le deuxième servomoteur
+
+#define Light  16 // Light GPIO16 (D0)
+
+int motorSpeed = 500; // 0 to 1023 for ESP8266
+bool isCatch = false; // Pour suivre l'état du bouton Catch
+
+ESP8266WebServer server(80);
+
+void stopMotors() {
+  digitalWrite(dirMotorA, LOW);
+  digitalWrite(dirMotorB, LOW);
+  analogWrite(pwmMotorA, 0);
+  analogWrite(pwmMotorB, 0);
+}
+
+void moveForward() {
+  digitalWrite(dirMotorA, HIGH);
+  digitalWrite(dirMotorB, LOW);
+  analogWrite(pwmMotorA, motorSpeed);
+  analogWrite(pwmMotorB, motorSpeed);
+  server.send(200, "text/html", "Moving Forward");
+}
+
+void moveBackward() {
+  digitalWrite(dirMotorA, LOW);
+  digitalWrite(dirMotorB, HIGH);
+  analogWrite(pwmMotorA, motorSpeed);
+  analogWrite(pwmMotorB, motorSpeed);
+  server.send(200, "text/html", "Moving Backward");
+}
+
+void turnLeft() {
+  digitalWrite(dirMotorA, LOW);
+  digitalWrite(dirMotorB, LOW);
+  analogWrite(pwmMotorA, motorSpeed / 2);
+  analogWrite(pwmMotorB, motorSpeed / 2);
+  server.send(200, "text/html", "Turning Left");
+}
+
+void turnRight() {
+  digitalWrite(dirMotorA, HIGH);
+  digitalWrite(dirMotorB, HIGH);
+  analogWrite(pwmMotorA, motorSpeed / 2);
+  analogWrite(pwmMotorB, motorSpeed / 2);
+  server.send(200, "text/html", "Turning Right");
+}
+
+void toggleCatch() {
+  if (isCatch) {
+    // Relâcher
+    servo1.write(0);
+    servo2.write(180);
+    isCatch = false;
+  } else {
+    // Attraper
+    servo1.write(60);  // Remplacer par la position d'attrapage réelle
+    servo2.write(120); // Remplacer par la position d'attrapage réelle
+    isCatch = true;
+  }
+  server.send(200, "text/html", isCatch ? "Catch" : "Release");
+}
+
+void setup() {
+  pinMode(pwmMotorA, OUTPUT);
+  pinMode(pwmMotorB, OUTPUT);
+  pinMode(dirMotorA, OUTPUT);
+  pinMode(dirMotorB, OUTPUT);
+  pinMode(Light, OUTPUT);
+  digitalWrite(Light, LOW);
+
+  // Initialiser les servomoteurs
+  servo1.attach(servoPin1, 544, 2400);
+  servo2.attach(servoPin2, 544, 2400);
+  servo1.write(0); // Position initiale à 0 degré
+  servo2.write(180); // Position initiale à 0 degré
+
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connecté à ");
+  Serial.println(ssid);
+  Serial.print("Adresse IP : ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", []() {
+    server.send(200, "text/html", "Page principale");
+  });
+  server.on("/switchLedOn", []() {
+    digitalWrite(Light, HIGH);
+    server.send(200, "text/html", "Led On");
+  });
+  server.on("/switchLedOff", []() {
+    digitalWrite(Light, LOW);
+    server.send(200, "text/html", "Led Off");
+  });
+  server.on("/moveForward", moveForward);
+  server.on("/moveBackward", moveBackward);
+  server.on("/turnLeft", turnLeft);
+  server.on("/turnRight", turnRight);
+  server.on("/stop", []() {
+    stopMotors();
+    server.send(200, "text/html", "Stop");
+  });
+  server.on("/catch", toggleCatch);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+
+  // Vérifier si la connexion WiFi est perdue
+  if (WiFi.status() != WL_CONNECTED) {
+    stopMotors(); // Arrêter tous les moteurs
+  }
+}
+

@@ -1,0 +1,169 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <Servo.h>
+
+// WiFi
+const char* ssid = "Wifi Erwan";
+const char* password = "sisilafamille";
+
+// Moteurs DC
+const int pwmMotorA = D1; // Enable/speed motor A
+const int dirMotorA = D3; // Direction motor A
+const int pwmMotorB = D2; // Enable/speed motor B
+const int dirMotorB = D4; // Direction motor B
+
+// Servomoteurs
+Servo servo1;
+Servo servo2;
+const int servoPin1 = D5; // Pin pour le premier servomoteur
+const int servoPin2 = D6; // Pin pour le deuxième servomoteur
+
+#define Light  16 // Light GPIO16 (D0)
+
+int motorSpeed = 500; // 0 to 1023 for ESP8266
+bool isCatch = false; // Pour suivre l'état du bouton Catch
+bool isLedOn = false; // Pour suivre l'état du bouton LED
+
+ESP8266WebServer server(80);
+
+void stopMotors() {
+  digitalWrite(dirMotorA, LOW);
+  digitalWrite(dirMotorB, LOW);
+  analogWrite(pwmMotorA, 0);
+  analogWrite(pwmMotorB, 0);
+  server.send(200, "text/html", "Stop");
+  Serial.println("Motors stopped");
+}
+
+void moveForward() {
+  digitalWrite(dirMotorA, HIGH);
+  digitalWrite(dirMotorB, LOW);
+  analogWrite(pwmMotorA, motorSpeed);
+  analogWrite(pwmMotorB, motorSpeed);
+  server.send(200, "text/html", "Moving Forward");
+  Serial.println("Moving Forward");
+}
+
+void moveBackward() {
+  digitalWrite(dirMotorA, LOW);
+  digitalWrite(dirMotorB, HIGH);
+  analogWrite(pwmMotorA, motorSpeed);
+  analogWrite(pwmMotorB, motorSpeed);
+  server.send(200, "text/html", "Moving Backward");
+  Serial.println("Moving Backward");
+}
+
+void turnLeft() {
+  digitalWrite(dirMotorA, LOW);
+  digitalWrite(dirMotorB, LOW);
+  analogWrite(pwmMotorA, motorSpeed / 2);
+  analogWrite(pwmMotorB, motorSpeed / 2);
+  server.send(200, "text/html", "Turning Left");
+  Serial.println("Turning Left");
+}
+
+void turnRight() {
+  digitalWrite(dirMotorA, HIGH);
+  digitalWrite(dirMotorB, HIGH);
+  analogWrite(pwmMotorA, motorSpeed / 2);
+  analogWrite(pwmMotorB, motorSpeed / 2);
+  server.send(200, "text/html", "Turning Right");
+  Serial.println("Turning Right");
+}
+
+void toggleCatch() {
+  if (isCatch) {
+    // Relâcher
+    servo1.write(0);
+    servo2.write(180);
+    isCatch = false;
+    Serial.println("Released");
+  } else {
+    // Attraper
+    servo1.write(60);  // Remplacer par la position d'attrapage réelle
+    servo2.write(120); // Remplacer par la position d'attrapage réelle
+    isCatch = true;
+    Serial.println("Catched");
+  }
+  server.send(200, "text/html", isCatch ? "Catch" : "Release");
+}
+
+void toggleLed() {
+  if (isLedOn) {
+    digitalWrite(Light, LOW);
+    isLedOn = false;
+    Serial.println("LED Off");
+  } else {
+    digitalWrite(Light, HIGH);
+    isLedOn = true;
+    Serial.println("LED On");
+  }
+  server.send(200, "text/html", isLedOn ? "Led On" : "Led Off");
+}
+
+void reconnectWiFi() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.print("Connecting to ");
+    Serial.println(ssid);
+    WiFi.begin(ssid, password);
+
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 10) {
+      delay(500);
+      Serial.print(".");
+      attempts++;
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("Connected to WiFi.");
+      Serial.print("IP Address: ");
+      Serial.println(WiFi.localIP());
+      digitalWrite(Light, HIGH); // Allumer la LED lors de la connexion WiFi
+    } else {
+      Serial.println("Failed to connect to WiFi.");
+      digitalWrite(Light, LOW); // Éteindre la LED en cas d'échec de connexion WiFi
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(pwmMotorA, OUTPUT);
+  pinMode(pwmMotorB, OUTPUT);
+  pinMode(dirMotorA, OUTPUT);
+  pinMode(dirMotorB, OUTPUT);
+  pinMode(Light, OUTPUT);
+  digitalWrite(Light, LOW);
+
+  // Initialiser les servomoteurs
+  servo1.attach(servoPin1, 544, 2400);
+  servo2.attach(servoPin2, 544, 2400);
+  servo1.write(0); // Position initiale à 0 degré
+  servo2.write(180); // Position initiale à 0 degré
+
+  WiFi.mode(WIFI_STA);
+  reconnectWiFi();
+
+  server.on("/", []() {
+    server.send(200, "text/html", "Page principale");
+  });
+  server.on("/switchLedOn", toggleLed);
+  server.on("/switchLedOff", toggleLed);
+  server.on("/moveForward", moveForward);
+  server.on("/moveBackward", moveBackward);
+  server.on("/turnLeft", turnLeft);
+  server.on("/turnRight", turnRight);
+  server.on("/stop", stopMotors);
+  server.on("/catch", toggleCatch);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+  reconnectWiFi();
+  // Vérifier si la connexion WiFi est perdue
+  if (WiFi.status() != WL_CONNECTED) {
+    stopMotors(); // Arrêter tous les moteurs
+    digitalWrite(Light, LOW); // Éteindre la LED lorsque la connexion WiFi est perdue
+  }
+}
