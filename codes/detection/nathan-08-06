@@ -3,9 +3,6 @@ import time
 import cv2
 import cv2.aruco as aruco
 import math
-from queue import PriorityQueue
-import pygame
-import heapq
 
 ARUCO_DICT = {
     "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
@@ -40,19 +37,10 @@ ARRIV_COORDS = [
     ((365, 730, 475, 820), (255, 0, 255), 'magenta'),  # Magenta
     ((1130, 85, 1230, 175), (255, 0, 0), 'bleu'),  # Bleu
     ((1130, 730, 1230, 820), (0, 255, 0), 'vert')  # Vert
-
 ]
 
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 255, 0)
-YELLOW = (255, 255, 0)
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-PURPLE = (128, 0, 128)
-ORANGE = (255, 165, 0)
-GREY = (128, 128, 128)
-TURQUOISE = (64, 224, 208)
+# coef_rouge = distance / valeur_rouge
+# distance = math.sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2)
 
 arucoop = (400, 400)
 closest_coord = None
@@ -410,83 +398,13 @@ def draw_grid(image, QUAD_RES, thickness, aruco_corners, mask_blanc, mask_cyan, 
 
     return image, blanc_cubes_coords, cyan_cubes_coords, rouge_cubes_coords, gris_cubes_coords  # Retourner l'image et les coordonnées des cubes
 
+
 class Case:
-    def __init__(self, position, categorie, couleur, voisins, row, col, width, total_rows):
-        self.position = position
-        self.categorie = categorie
-        self.couleur = couleur
-        self.voisins = voisins
-        self.row = row
-        self.col = col
-        self.x = row * width
-        self.y = col * width
-        self.width = width
-        self.total_rows = total_rows
-        self.neighbors = []
-        self.color = WHITE
-        if self.categorie == 'obstacle':
-            self.color = BLACK
-
-    def get_pos(self):
-        return self.row, self.col
-
-    def is_closed(self):
-        return self.color == RED
-
-    def is_open(self):
-        return self.color == GREEN
-
-    def is_barrier(self):
-        return self.color == BLACK
-
-    def is_start(self):
-        return self.color == ORANGE
-
-    def is_end(self):
-        return self.color == TURQUOISE
-
-    def reset(self):
-        self.color = WHITE
-
-    def make_start(self):
-        self.color = ORANGE
-
-    def make_closed(self):
-        self.color = RED
-
-    def make_open(self):
-        self.color = GREEN
-
-    def make_barrier(self):
-        self.color = BLACK
-
-    def make_end(self):
-        self.color = TURQUOISE
-
-    def make_path(self):
-        self.color = PURPLE
-
-    def draw(self, image):
-        top_left = (self.y, self.x)
-        bottom_right = (self.y + self.width, self.x + self.width)
-        cv2.rectangle(image, top_left, bottom_right, self.color, -1)
-
-    def update_neighbors(self, grid):
-        self.neighbors = []
-        if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_barrier(): # DOWN
-            self.neighbors.append(grid[self.row + 1][self.col])
-
-        if self.row > 0 and not grid[self.row - 1][self.col].is_barrier(): # UP
-            self.neighbors.append(grid[self.row - 1][self.col])
-
-        if self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_barrier(): # RIGHT
-            self.neighbors.append(grid[self.row][self.col + 1])
-
-        if self.col > 0 and not grid[self.row][self.col - 1].is_barrier(): # LEFT
-            self.neighbors.append(grid[self.row][self.col - 1])
-
-    def __lt__(self, other):
-        return False
+    def __init__(self, position, categorie, couleur, voisins):
+        self.position = position  # tuple (top_left, bottom_right)
+        self.categorie = categorie  # 'bordure', 'cube', 'zone d'arrivée', 'vide'
+        self.couleur = couleur  # 'blanc', 'cyan', 'rouge', 'gris', None
+        self.voisins = voisins  # Liste des cases voisines
 
 
 def process_grid(image, mm_nbr_pixel_x, mm_nbr_pixel_y, aruco_corners, mask_blanc, mask_cyan, mask_rouge, mask_gris):
@@ -543,9 +461,7 @@ def process_grid(image, mm_nbr_pixel_x, mm_nbr_pixel_y, aruco_corners, mask_blan
                         break
 
             # Création de l'objet Case
-            new_case = Case((top_left, bottom_right), categorie, couleur, [], i // QUAD_RES, j // QUAD_RES, QUAD_RES,
-                            h // QUAD_RES)
-
+            new_case = Case((top_left, bottom_right), categorie, couleur, [])
             row.append(new_case)
         cases.append(row)
 
@@ -565,7 +481,7 @@ def process_grid(image, mm_nbr_pixel_x, mm_nbr_pixel_y, aruco_corners, mask_blan
         for j in range(len(cases[i])):
 
             if cases[i][j].categorie == 'vide':
-                cv2.rectangle(image, cases[i][j].position[0], cases[i][j].position[1], (255, 255, 255), 1)
+                cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 255, 255), 1)
 
             if cases[i][j].categorie == 'bordure':
                 cv2.rectangle(image, cases[i][j].position[0], cases[i][j].position[1], (0, 0, 0), 1)
@@ -664,38 +580,8 @@ def group_cubes(centers):
     return representatives
 
 
-def distance(coord1, coord2):
-    """Calcule la distance euclidienne entre deux coordonnées."""
-    return math.sqrt((coord1[0] - coord2[0]) ** 2 + (coord1[1] - coord2[1]) ** 2)
-
-
-def trouver_plus_proche(coord, liste_coord):
-    """Trouve la coordonnée la plus proche d'une coordonnée donnée dans une liste de coordonnées."""
-    plus_proche = None
-    min_distance = float('inf')
-    for c in liste_coord:
-        dist = distance(coord, c)
-        if dist < min_distance:
-            min_distance = dist
-            plus_proche = c
-    return plus_proche
-
-
-def generer_chemin(coord_arUco, liste_coord):
-    """Génère un chemin de coordonnées en partant d'une coordonnée ArUco et trouvant les coordonnées les plus proches successivement."""
-    chemin = []
-    prochaine_coord = trouver_plus_proche(coord_arUco, liste_coord)
-    if prochaine_coord:
-        chemin.append(prochaine_coord)
-        liste_coord.remove(prochaine_coord)
-
-    while liste_coord:
-        derniere_coord = chemin[-1]
-        prochaine_coord = trouver_plus_proche(derniere_coord, liste_coord)
-        chemin.append(prochaine_coord)
-        liste_coord.remove(prochaine_coord)
-
-    return chemin
+def calculate_distance(p1, p2):
+    return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
 
 
 def FS1(img):
@@ -746,6 +632,7 @@ def FS1(img):
     pixel_distance_x, mm_nbr_pixel_x, pixel_nbr_mm_x, pixel_distance_y, mm_nbr_pixel_y, pixel_nbr_mm_y = calcul_pixel_mm(
         x_aruco_0, y_aruco_0, x_aruco_1, y_aruco_1, x_aruco_2, y_aruco_2, x_aruco_3, y_aruco_3)
 
+
     # ---------------------------------DETECTIONS DES COULEURS------------------------------------
 
     # Coordonnées des couleurs de calibrations nous intéressant
@@ -764,10 +651,14 @@ def FS1(img):
     cv2.circle(img_recadre_copy, pixel_rouge, 8, (255, 255, 255), 1)
     cv2.circle(img_recadre_copy, pixel_gris, 8, (255, 255, 255), 1)
 
+
     return img_recadre, img_recadre_copy, mm_nbr_pixel_x, pixel_nbr_mm_x, mm_nbr_pixel_y, pixel_nbr_mm_y, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris
 
 
+
 def FS2(img_recadre, img_recadre_copy, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris):
+
+
     # Image en HSV pour y afficher des infos
     img_recadre_hsv = cv2.cvtColor(img_recadre, cv2.COLOR_BGR2HSV)
     # Copie de l'image recadré HSV pour y afficher des infos dessus
@@ -824,7 +715,6 @@ def FS2(img_recadre, img_recadre_copy, pixel_blanc, pixel_cyan, pixel_rouge, pix
     cubes_cyan = [case.position for row in cases for case in row if case.categorie == 'cube' and case.couleur == 'cyan']
     cubes_rouge = [case.position for row in cases for case in row if
                    case.categorie == 'cube' and case.couleur == 'rouge']
-
     cubes_gris = [case.position for row in cases for case in row if case.categorie == 'obstacle']
 
     # Rassemblage des cubes de memes couleurs et centre des groupages
@@ -847,132 +737,29 @@ def FS2(img_recadre, img_recadre_copy, pixel_blanc, pixel_cyan, pixel_rouge, pix
     for centres_gris in unique_representatives_gris:
         cv2.circle(img_with_grid, (centres_gris[0], centres_gris[1]), 3, (255, 255, 255), 1)
 
-    return all_mask_hsv, img_with_grid, unique_representatives_blanc, unique_representatives_cyan, unique_representatives_rouge, unique_representatives_gris, cases
+    return all_mask_hsv, img_with_grid, unique_representatives_blanc, unique_representatives_cyan, unique_representatives_rouge, unique_representatives_gris
+
+
+
+
+
+
+
+
+
 
     # -----------------------------------------------------------------------------------------------------------------
     # -----------------------------------------------------------------------------------------------------------------
-    # -----------------------------------------A*--------------------------------------------
+    # -----------------------------------------LANCEMENT DU CODE CI-DESSOUS--------------------------------------------
     # -----------------------------------------------------------------------------------------------------------------
     # -----------------------------------------------------------------------------------------------------------------
-
-
-def heuristic(a, b):
-    # Utilisation de la distance de Manhattan comme heuristique
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])
-
-def a_star(grid, start, end):
-    open_set = []
-    heapq.heappush(open_set, (0, start))  # (priority, node)
-    came_from = {}
-    g_score = {case.get_pos(): float('inf') for row in grid for case in row}
-    g_score[start] = 0
-    f_score = {case.get_pos(): float('inf') for row in grid for case in row}
-    f_score[start] = heuristic(start, end)
-
-    open_set_hash = {start}  # Pour suivre les noeuds ouverts
-
-    while open_set:
-        current = heapq.heappop(open_set)[1]  # Noeud avec le score f le plus bas
-        open_set_hash.remove(current)
-
-        if current == end:
-            path = []
-            while current in came_from:
-                path.append(current)
-                current = came_from[current]
-            path.append(start)
-            path.reverse()
-            return path
-
-        current_case = grid[current[0]][current[1]]
-        for neighbor in current_case.neighbors:
-            neighbor_pos = neighbor.get_pos()
-            tentative_g_score = g_score[current] + 1  # Tous les mouvements coûtent 1
-
-            if tentative_g_score < g_score[neighbor_pos]:
-                came_from[neighbor_pos] = current
-                g_score[neighbor_pos] = tentative_g_score
-                f_score[neighbor_pos] = tentative_g_score + heuristic(neighbor_pos, end)
-                if neighbor_pos not in open_set_hash:
-                    heapq.heappush(open_set, (f_score[neighbor_pos], neighbor_pos))
-                    open_set_hash.add(neighbor_pos)
-
-    return []  # Retourne un chemin vide si aucun chemin trouvé
-
-
-def FS3(cases, coordonné_arruco, path):
-    start = (coordonné_arruco[1] // QUAD_RES, coordonné_arruco[0] // QUAD_RES)
-    end = (path[0][1] // QUAD_RES, path[0][0] // QUAD_RES)
-
-    # Assurez-vous que les voisins sont mis à jour pour chaque cellule
-    for row in cases:
-        for case in row:
-            case.update_neighbors(cases)
-
-    print(f"essaie de trouver de {start} to {end}")
-
-    # Exécutez l'algorithme A* pour trouver le chemin
-    route = a_star(cases, start, end)
-
-    if not route:
-        print(f"Aucun chemin trouvé de {start} à {end}.")
-    else:
-        print("Chemin trouvé:")
-        for step in route:
-            print(step)
-
-    return cases, route
-
-
-# -----------------------------------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------------------------------
-# -----------------------------------------LANCEMENT DU CODE CI-DESSOUS--------------------------------------------
-# -----------------------------------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------------------------------
-
-
-def FS4(cases, arruco, depart):
-    for i in range(len(cases)):
-        for j in range(len(cases[i])):
-            cases[i][j].update_neighbors(cases)
-
-    # Appelez FS3 avec les cases, coordonné_arruco et le premier élément de la liste path
-
-    cases, route = FS3(cases, arruco, path)
-
-    depart = path[0]
-    path.pop(0)
-
-    # Afficher la grille avec le chemin trouvé
-    img_with_path = img_with_grid.copy()
-    for row in cases:
-        for case in row:
-            case.draw(img_with_path)
-            cv2.imshow("Image avec chemin", img_with_path)
-
-    return cases, route, depart
-
-
-def visualize_grid(cases, img_with_grid):
-    for row in cases:
-        for case in row:
-            case.draw(img_with_grid)
-    cv2.imshow("Grille avec chemin", img_with_grid)
-    cv2.waitKey(0)
-
-
-# -----------------------------------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------------------------------
-# -----------------------------------------LANCEMENT DU CODE CI-DESSOUS--------------------------------------------
-# -----------------------------------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------------------------------
 
 
 aruco_type = "DICT_ARUCO_ORIGINAL"
 arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
 arucoParams = cv2.aruco.DetectorParameters()
 
-if TEST == 0:
+if TEST != 1:
     cap = cv2.VideoCapture("./Videos/salle1.mp4")
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
@@ -1000,59 +787,73 @@ comptagemask = 0
 
 img = cv2.imread('./Images/photo_video.png')
 
-# Lancer FS1 et recup img recadre, conversion px/mm et coord des pixels de calibrations
-img_recadre, img_recadre_copy, mm_nbr_pixel_x, pixel_nbr_mm_x, mm_nbr_pixel_y, pixel_nbr_mm_y, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris = FS1(
-    img)
+#Lancer FS1 et recup img recadre, conversion px/mm et coord des pixels de calibrations
+img_recadre, img_recadre_copy, mm_nbr_pixel_x, pixel_nbr_mm_x, mm_nbr_pixel_y, pixel_nbr_mm_y, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris = FS1(img)
 
 print("[Conversion] mm_nbr_pixel_x: {:.2f}, pixel_nbr_mm_x: {:.2f}".format(mm_nbr_pixel_x, pixel_nbr_mm_x))
 print("[Conversion] mm_nbr_pixel_y: {:.2f}, pixel_nbr_mm_y: {:.2f}".format(mm_nbr_pixel_y, pixel_nbr_mm_y))
 
 if DEBUG:
-    print("[Calibrage] Coord Pixel Blanc:", pixel_blanc)
-    print("[Calibrage] Coord Pixel Cyan:", pixel_cyan)
-    print("[Calibrage] Coord Pixel Rouge:", pixel_rouge)
-    print("[Calibrage] Coord Pixel Gris:", pixel_gris)
+    print("[Calibrage] Coord Pixel Blanc:",pixel_blanc)
+    print("[Calibrage] Coord Pixel Cyan:",pixel_cyan)
+    print("[Calibrage] Coord Pixel Rouge:",pixel_rouge)
+    print("[Calibrage] Coord Pixel Gris:",pixel_gris)
 
-# Lancer FS2 et recup les masks, l'image quadrillé et les coord des cubes et obstacles
-all_mask_hsv, img_with_grid, unique_representatives_blanc, unique_representatives_cyan, unique_representatives_rouge, unique_representatives_gris, cases = FS2(
-    img_recadre, img_recadre_copy, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris)
+
+#Lancer FS2 et recup les masks, l'image quadrillé et les coord des cubes et obstacles
+all_mask_hsv, img_with_grid, unique_representatives_blanc, unique_representatives_cyan, unique_representatives_rouge, unique_representatives_gris = FS2(img_recadre, img_recadre_copy, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris)
 
 print("[Detection] Centres Cubes Blancs : ", unique_representatives_blanc)
 print("[Detection] Centres Cubes Cyans : ", unique_representatives_cyan)
 print("[Detection] Centres Cubes Rouges : ", unique_representatives_rouge)
 print("[Detection] Centres Obstacles : ", unique_representatives_gris)
 
-# coordonnées arruco
-coordonné_arruco = (700, 200)
 
-all_centers_cube =  unique_representatives_rouge + unique_representatives_cyan + unique_representatives_blanc
+
+# coordonnées arruco
+coordonné_arruco = (500, 500)
+
+all_centers_cube = unique_representatives_blanc + unique_representatives_cyan + unique_representatives_rouge
+
+
+def calculate_distance(p1, p2):
+
+    return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
+
+
+def find_nearest(current_position, centers):
+    """Trouve le centre le plus proche de la position actuelle."""
+    min_distance = float('inf')
+    nearest_center = None
+    for center in centers:
+        distance = calculate_distance(current_position, center)
+        if distance < min_distance:
+            min_distance = distance
+            nearest_center = center
+    return nearest_center
+
+
+def create_path(start_position, centers):
+    """Crée un chemin pour toucher tous les centres en commençant par start_position."""
+    path = []
+    remaining_centers = centers.copy()
+    current_position = start_position
+
+    while remaining_centers:
+        nearest_center = find_nearest(current_position, remaining_centers)
+        path.append(nearest_center)
+        remaining_centers.remove(nearest_center)
+        current_position = nearest_center
+
+    return path
+
 
 # Générer le chemin sans inclure la position initiale
-
-path = generer_chemin(coordonné_arruco, all_centers_cube)
+path = create_path(coordonné_arruco, all_centers_cube)
 
 print("Chemin pour etape robot :")
 for step in path:
     print(step)
-
-i = 0
-depart = 0
-
-route = a_star(cases, (14, 31), (19, 44))
-for step in route:
-    print(step)
-    print("test")
-
-while path:
-    if i == 0:
-        cases, route, depart = FS4(cases, coordonné_arruco, depart)
-        for step in route:
-            cases[step[0]][step[1]].make_open()  # Marquez le chemin dans la grille
-        i += 1
-    else:
-        cases, route, depart = FS4(cases, depart, depart)
-        for step in route:
-            cases[step[0]][step[1]].make_path()  # Marquez le chemin dans la grille
 
 while True:
     if DEBUG:
@@ -1067,3 +868,6 @@ while True:
 if TEST == 0:
     cap.release()
 cv2.destroyAllWindows()
+
+
+
