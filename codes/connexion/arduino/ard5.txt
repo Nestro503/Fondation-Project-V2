@@ -1,0 +1,167 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <Servo.h>
+
+const char* ssid = "Wifi Erwan";
+const char* password = "sisilafamille";
+
+const int pwmMotorA = D1;
+const int dirMotorA = D3;
+const int pwmMotorB = D2;
+const int dirMotorB = D4;
+
+Servo servo1;
+Servo servo2;
+const int servoPin1 = D5;
+const int servoPin2 = D6;
+
+#define Light  16
+
+int motorSpeed = 500;
+bool isCatch = false;
+bool isLedOn = false;
+
+ESP8266WebServer server(80);
+
+void stopMotors() {
+  digitalWrite(dirMotorA, LOW);
+  digitalWrite(dirMotorB, LOW);
+  analogWrite(pwmMotorA, 0);
+  analogWrite(pwmMotorB, 0);
+  Serial.println("Motors stopped");
+  server.send(200, "text/html", "Motors stopped");
+}
+
+void moveForward(int duration) {
+  digitalWrite(dirMotorA, HIGH);
+  digitalWrite(dirMotorB, LOW);
+  analogWrite(pwmMotorA, motorSpeed);
+  analogWrite(pwmMotorB, motorSpeed);
+  Serial.println("Moving Forward");
+  delay(duration);
+  stopMotors();
+}
+
+void moveBackward(int duration) {
+  digitalWrite(dirMotorA, LOW);
+  digitalWrite(dirMotorB, HIGH);
+  analogWrite(pwmMotorA, motorSpeed);
+  analogWrite(pwmMotorB, motorSpeed);
+  Serial.println("Moving Backward");
+  delay(duration);
+  stopMotors();
+}
+
+void turnLeft(int duration) {
+  digitalWrite(dirMotorA, LOW);
+  digitalWrite(dirMotorB, LOW);
+  analogWrite(pwmMotorA, motorSpeed / 2);
+  analogWrite(pwmMotorB, motorSpeed / 2);
+  Serial.println("Turning Left");
+  delay(duration);
+  stopMotors();
+}
+
+void turnRight(int duration) {
+  digitalWrite(dirMotorA, HIGH);
+  digitalWrite(dirMotorB, HIGH);
+  analogWrite(pwmMotorA, motorSpeed / 2);
+  analogWrite(pwmMotorB, motorSpeed / 2);
+  Serial.println("Turning Right");
+  delay(duration);
+  stopMotors();
+}
+
+void toggleCatch() {
+  if (isCatch) {
+    servo1.write(0);
+    servo2.write(180);
+    isCatch = false;
+    Serial.println("Released");
+  } else {
+    servo1.write(60);
+    servo2.write(120);
+    isCatch = true;
+    Serial.println("Catched");
+  }
+  server.send(200, "text/html", "Catch toggled");
+}
+
+void toggleLed() {
+  if (isLedOn) {
+    digitalWrite(Light, LOW);
+    isLedOn = false;
+    Serial.println("LED Off");
+  } else {
+    digitalWrite(Light, HIGH);
+    isLedOn = true;
+    Serial.println("LED On");
+  }
+  server.send(200, "text/html", "LED toggled");
+}
+
+void handleCommand() {
+  if (server.hasArg("duration")) {
+    int duration = server.arg("duration").toInt();
+    String command = server.arg("command");
+
+    if (command == "moveForward") {
+      moveForward(duration);
+    } else if (command == "moveBackward") {
+      moveBackward(duration);
+    } else if (command == "turnLeft") {
+      turnLeft(duration);
+    } else if (command == "turnRight") {
+      turnRight(duration);
+    } else if (command == "stop") {
+      stopMotors();
+    } else if (command == "catch") {
+      toggleCatch();
+    } else if (command == "led") {
+      toggleLed();
+    } else {
+      server.send(400, "text/html", "Invalid command");
+    }
+  } else {
+    server.send(400, "text/html", "Missing duration");
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(pwmMotorA, OUTPUT);
+  pinMode(pwmMotorB, OUTPUT);
+  pinMode(dirMotorA, OUTPUT);
+  pinMode(dirMotorB, OUTPUT);
+  pinMode(Light, OUTPUT);
+  digitalWrite(Light, LOW);
+
+  servo1.attach(servoPin1, 544, 2400);
+  servo2.attach(servoPin2, 544, 2400);
+  servo1.write(0);
+  servo2.write(180);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("WiFi connected");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", []() {
+    server.send(200, "text/html", "Page principale");
+  });
+  server.on("/command", handleCommand);
+  server.on("/switchLedOn", toggleLed);
+  server.on("/catch", toggleCatch);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}
