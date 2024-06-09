@@ -1015,4 +1015,5 @@ while True:
 
 if TEST == 0:
     cap.release()
+
 cv2.destroyAllWindows()
