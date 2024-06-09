@@ -402,7 +402,7 @@ def draw_grid(image, QUAD_RES, thickness, aruco_corners, mask_blanc, mask_cyan, 
 class Case:
     def __init__(self, position, categorie, couleur, voisins):
         self.position = position  # tuple (top_left, bottom_right)
-        self.categorie = categorie  # 'bordure', 'cube', 'zone d'arrivée', 'vide'
+        self.categorie = categorie  # 'bordure', 'cube', 'zonedepot ', 'vide', 'aruco', 'obstacle'
         self.couleur = couleur  # 'blanc', 'cyan', 'rouge', 'gris', None
         self.voisins = voisins  # Liste des cases voisines
 
@@ -480,8 +480,8 @@ def process_grid(image, mm_nbr_pixel_x, mm_nbr_pixel_y, aruco_corners, mask_blan
     for i in range(len(cases)):
         for j in range(len(cases[i])):
 
-            # if cases[i][j].categorie == 'vide':
-            # cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 255, 255), 1)
+            if cases[i][j].categorie == 'vide':
+                cv2.rectangle(image, cases[i][j].position[0],cases[i][j].position[1], (255, 255, 255), 1)
 
             if cases[i][j].categorie == 'bordure':
                 cv2.rectangle(image, cases[i][j].position[0], cases[i][j].position[1], (0, 0, 0), 1)
@@ -658,8 +658,7 @@ def FS1(img):
 
 def FS2(img_recadre, img_recadre_copy, pixel_blanc, pixel_cyan, pixel_rouge, pixel_gris):
 
-
-    # Image en HSV pour y afficher des infos
+    # Image en HSV recup les valeurs de couleurs HSV blanc, cyan et rouge
     img_recadre_hsv = cv2.cvtColor(img_recadre, cv2.COLOR_BGR2HSV)
     # Copie de l'image recadré HSV pour y afficher des infos dessus
     img_recadre_hsv_copy = img_recadre_hsv.copy()
@@ -755,6 +754,8 @@ def FS2(img_recadre, img_recadre_copy, pixel_blanc, pixel_cyan, pixel_rouge, pix
     # -----------------------------------------------------------------------------------------------------------------
 
 
+
+
 aruco_type = "DICT_ARUCO_ORIGINAL"
 arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
 arucoParams = cv2.aruco.DetectorParameters()
@@ -809,7 +810,7 @@ print("[Detection] Centres Cubes Rouges : ", unique_representatives_rouge)
 print("[Detection] Centres Obstacles : ", unique_representatives_gris)
 
 while True:
-    if DEBUG:
+    if DEBUG==0:
         cv2.imshow("img_recadre", img_recadre)
         cv2.imshow("img_recadre_copy", img_recadre_copy)
         cv2.imshow("Masks", all_mask_hsv)
