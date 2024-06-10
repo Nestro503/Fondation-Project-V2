@@ -609,19 +609,16 @@ def process_grid(image, mm_nbr_pixel_x, mm_nbr_pixel_y, aruco_corners, mask_blan
 
 
 def find_centers(cubes):
-    """ Convert corner coordinates to center coordinates. """
     return [(int((x1 + x2) / 2), int((y1 + y2) / 2)) for (x1, y1), (x2, y2) in cubes]
 
 
 def are_adjacent(c1, c2):
-    """ Check if centers are adjacent considering each square has a side of 20 units. """
     x1, y1 = c1
     x2, y2 = c2
     return abs(x1 - x2) <= QUAD_RES and abs(y1 - y2) <= QUAD_RES
 
 
 def find_group(c, groups):
-    """ Find which group a coordinate belongs to. """
     for i, group in enumerate(groups):
         if any(are_adjacent(c, member) for member in group):
             return i
@@ -629,7 +626,6 @@ def find_group(c, groups):
 
 
 def group_cubes(centers):
-    """ Group cubes that are adjacent into single representative groups. """
     groups = []
     representatives = []
     for center in centers:
@@ -665,12 +661,10 @@ def group_cubes(centers):
 
 
 def distance(coord1, coord2):
-    """Calcule la distance euclidienne entre deux coordonnées."""
     return math.sqrt((coord1[0] - coord2[0]) ** 2 + (coord1[1] - coord2[1]) ** 2)
 
 
 def trouver_plus_proche(coord, liste_coord):
-    """Trouve la coordonnée la plus proche d'une coordonnée donnée dans une liste de coordonnées."""
     plus_proche = None
     min_distance = float('inf')
     for c in liste_coord:
@@ -682,7 +676,6 @@ def trouver_plus_proche(coord, liste_coord):
 
 
 def generer_chemin(coord_arUco, liste_coord):
-    """Génère un chemin de coordonnées en partant d'une coordonnée ArUco et trouvant les coordonnées les plus proches successivement."""
     chemin = []
     prochaine_coord = trouver_plus_proche(coord_arUco, liste_coord)
     if prochaine_coord:
@@ -1023,7 +1016,7 @@ print("[Detection] Centres Cubes Rouges : ", unique_representatives_rouge)
 print("[Detection] Centres Obstacles : ", unique_representatives_gris)
 
 # coordonnées arruco
-coordonné_arruco = (700, 200)
+coordonné_arruco = (500, 500)
 
 all_centers_cube =  unique_representatives_rouge + unique_representatives_cyan + unique_representatives_blanc
 
@@ -1031,24 +1024,23 @@ all_centers_cube =  unique_representatives_rouge + unique_representatives_cyan +
 
 path = generer_chemin(coordonné_arruco, all_centers_cube)
 
-print("Chemin pour etape robot :")
+print("liste coordonnées triées :")
 for step in path:
     print(step)
 
 i = 0
 depart = 0
 
-route = a_star(cases, (14, 31), (19, 44))
-for step in route:
-    print(step)
-    print("test")
 
 while path:
     if i == 0:
         cases, route, depart = FS4(cases, coordonné_arruco, depart)
+        coordinates = route
         for step in route:
             cases[step[0]][step[1]].make_open()  # Marquez le chemin dans la grille
         i += 1
+        print(route)
+
     else:
         cases, route, depart = FS4(cases, depart, depart)
         for step in route:
@@ -1064,6 +1056,3 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-if TEST == 0:
-    cap.release()
-cv2.destroyAllWindows()
