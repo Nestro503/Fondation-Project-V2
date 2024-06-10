@@ -6,6 +6,7 @@ import math
 from queue import PriorityQueue
 import pygame
 import heapq
+import urllib.request
 
 ARUCO_DICT = {
     "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
@@ -17,7 +18,7 @@ ARUCO_DICT = {
 TEST = 2
 
 # Mettre à 1 pour des prints de debug, 0 pour pas debug
-DEBUG = 1
+DEBUG = 0
 
 DISTANCE_COIN_ARUCO_X_MM = 2940
 DISTANCE_COIN_Y_MM = 1940
@@ -410,6 +411,7 @@ def draw_grid(image, QUAD_RES, thickness, aruco_corners, mask_blanc, mask_cyan, 
 
     return image, blanc_cubes_coords, cyan_cubes_coords, rouge_cubes_coords, gris_cubes_coords  # Retourner l'image et les coordonnées des cubes
 
+
 class Case:
     def __init__(self, position, categorie, couleur, voisins, row, col, width, total_rows):
         self.position = position
@@ -473,16 +475,16 @@ class Case:
 
     def update_neighbors(self, grid):
         self.neighbors = []
-        if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_barrier(): # DOWN
+        if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_barrier():  # DOWN
             self.neighbors.append(grid[self.row + 1][self.col])
 
-        if self.row > 0 and not grid[self.row - 1][self.col].is_barrier(): # UP
+        if self.row > 0 and not grid[self.row - 1][self.col].is_barrier():  # UP
             self.neighbors.append(grid[self.row - 1][self.col])
 
-        if self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_barrier(): # RIGHT
+        if self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_barrier():  # RIGHT
             self.neighbors.append(grid[self.row][self.col + 1])
 
-        if self.col > 0 and not grid[self.row][self.col - 1].is_barrier(): # LEFT
+        if self.col > 0 and not grid[self.row][self.col - 1].is_barrier():  # LEFT
             self.neighbors.append(grid[self.row][self.col - 1])
 
     def __lt__(self, other):
@@ -853,6 +855,7 @@ def heuristic(a, b):
     # Utilisation de la distance de Manhattan comme heuristique
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
+
 def a_star(grid, start, end):
     open_set = []
     heapq.heappush(open_set, (0, start))  # (priority, node)
@@ -1018,7 +1021,7 @@ print("[Detection] Centres Obstacles : ", unique_representatives_gris)
 # coordonnées arruco
 coordonné_arruco = (500, 500)
 
-all_centers_cube =  unique_representatives_rouge + unique_representatives_cyan + unique_representatives_blanc
+all_centers_cube = unique_representatives_rouge + unique_representatives_cyan + unique_representatives_blanc
 
 # Générer le chemin sans inclure la position initiale
 
@@ -1030,6 +1033,7 @@ for step in path:
 
 i = 0
 depart = 0
+
 
 
 while path:
@@ -1046,13 +1050,155 @@ while path:
         for step in route:
             cases[step[0]][step[1]].make_path()  # Marquez le chemin dans la grille
 
-while True:
+
+
+# --------------------------------------------------------------------------------------------------------------------------#
+# FS4#
+# --------------------------------------------------------------------------------------------------------------------------#
+
+def recuptaillecase(pixel_nbr_mm_x, pixel_nbr_mm_y):
+    QUAD_RES = 20
+    taille_x_cm = QUAD_RES * pixel_nbr_mm_x / 10
+    taille_y_cm = QUAD_RES * pixel_nbr_mm_y / 10
+
     if DEBUG:
-        cv2.imshow("img_recadre", img_recadre)
-        cv2.imshow("img_recadre_copy", img_recadre_copy)
-        cv2.imshow("Masks", all_mask_hsv)
-        cv2.imshow("Image quadrillee", img_with_grid)
+        print("taillex_cm", taille_x_cm)
+        print("tailley_cm", taille_y_cm)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    return taille_x_cm, taille_y_cm
 
+
+taille_x, taille_y = recuptaillecase(pixel_nbr_mm_x, pixel_nbr_mm_y)
+
+# Adresse IP du robot
+root_url = "http://192.168.86.71/"
+
+# Données d'entrée
+angle = 420
+speed = 26
+dx = taille_x  # Taille horizontale des cases
+dy = taille_y  # Taille verticale des cases
+
+
+def sendRequest(url, retries=3, timeout=5):
+    attempt = 0
+    while attempt < retries:
+        try:
+            response = urllib.request.urlopen(url, timeout=timeout)
+            response_text = response.read().decode()
+            print(response_text)
+            return True, response_text
+        except Exception as e:
+            attempt += 1
+            print(f"Attempt {attempt} failed: {e}")
+            time.sleep(0.5)  # Reduced sleep time between retries
+    print(f"Failed to send request to {url} after {retries} attempts.")
+    sendCommand("stop", 0)  # Stop the motors for safety
+    return False, ""
+
+
+def sendCommand(command, duration):
+    url = f"{root_url}command?command={command}&duration={duration}"
+    success, response = sendRequest(url)
+    if success:
+        time.sleep((duration + 50) / 1000)  # Reduced delay after each command
+    return success
+
+
+def moveForward(duration):
+    sendCommand("moveForward", duration)
+    time.sleep((duration + 50) / 1000)
+
+
+def moveBackward(duration):
+    sendCommand("moveBackward", duration)
+    time.sleep((duration + 50) / 1000)
+
+
+def turnLeft(duration):
+    sendCommand("turnLeft", duration)
+    time.sleep((duration + 50) / 1000)
+
+
+def turnRight(duration):
+    sendCommand("turnRight", duration)
+    time.sleep((duration + 50) / 1000)
+
+
+def case_to_duration(cases, speed, case_size):
+    return int((cases * case_size / speed) * 1000)  # Duration in ms for given number of cases
+
+
+def generate_movements(coords, speed, dx, dy):
+    nodes = []
+    movements = []
+    current_direction = None
+    distance_count = 0
+
+    for i in range(1, len(coords)):
+        x_diff = coords[i][0] - coords[i - 1][0]
+        y_diff = coords[i][1] - coords[i - 1][1]
+        new_direction = (x_diff, y_diff)
+
+        if new_direction == current_direction:
+            distance_count += 1
+        else:
+            if current_direction is not None:
+                case_size = dy if current_direction in [(0, 1), (0, -1)] else dx
+                duration = case_to_duration(distance_count, speed, case_size)
+                movements.append(f"moveForward({duration})")
+                moveForward(duration)  # Envoyer la commande au robot
+                nodes.append(coords[i - 1])
+
+                # Détection de la direction de rotation en fonction des changements de direction
+                if current_direction == (0, 1):  # allant vers le bas
+                    if new_direction == (1, 0):  # tourner à droite
+                        movements.append("turnRight(400)")
+                        turnRight(angle)  # Envoyer la commande au robot
+                    elif new_direction == (-1, 0):  # tourner à gauche
+                        movements.append("turnLeft(400)")
+                        turnLeft(angle)  # Envoyer la commande au robot
+                elif current_direction == (1, 0):  # allant vers la droite
+                    if new_direction == (0, -1):  # tourner vers le haut
+                        movements.append("turnRight(400)")
+                        turnRight(angle)  # Envoyer la commande au robot
+                    elif new_direction == (0, 1):  # tourner vers le bas
+                        movements.append("turnLeft(400)")
+                        turnLeft(angle)  # Envoyer la commande au robot
+                elif current_direction == (0, -1):  # allant vers le haut
+                    if new_direction == (-1, 0):  # tourner vers la gauche
+                        movements.append("turnRight(400)")
+                        turnRight(angle)  # Envoyer la commande au robot
+                    elif new_direction == (1, 0):  # tourner vers la droite
+                        movements.append("turnLeft(400)")
+                        turnLeft(angle)  # Envoyer la commande au robot
+                elif current_direction == (-1, 0):  # allant vers la gauche
+                    if new_direction == (0, 1):  # tourner vers le bas
+                        movements.append("turnRight(400)")
+                        turnRight(angle)  # Envoyer la commande au robot
+                    elif new_direction == (0, -1):  # tourner vers le haut
+                        movements.append("turnLeft(400)")
+                        turnLeft(angle)  # Envoyer la commande au robot
+
+            current_direction = new_direction
+            distance_count = 1
+
+    # Ajouter le dernier mouvement
+    case_size = dy if current_direction in [(0, 1), (0, -1)] else dx
+    duration = case_to_duration(distance_count, speed, case_size)
+    movements.append(f"moveForward({duration})")
+    moveForward(duration)  # Envoyer la commande au robot
+    nodes.append(coords[-1])
+
+    return nodes, movements
+
+
+def FS5(speed, dx, dy, coordinates):
+    nodes, movements = generate_movements(coordinates, speed, dx, dy)
+    print("Coordonnées des nœuds :", nodes)
+    print("Séquence des mouvements :")
+    for move in movements:
+        print(move)
+
+
+FS5(speed, dx, dy, coordinates)
