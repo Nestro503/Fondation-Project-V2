@@ -1,0 +1,129 @@
+import time
+import urllib.request
+
+root_url = "http://192.168.86.71/"
+
+def sendRequest(url, retries=3, timeout=5):
+    attempt = 0
+    while attempt < retries:
+        try:
+            response = urllib.request.urlopen(url, timeout=timeout)
+            response_text = response.read().decode()
+            print(response_text)
+            return True, response_text
+        except Exception as e:
+            attempt += 1
+            print(f"Attempt {attempt} failed: {e}")
+            time.sleep(0.5)  # Reduced sleep time between retries
+    print(f"Failed to send request to {url} after {retries} attempts.")
+    sendCommand("stop", 0)  # Stop the motors for safety
+    return False, ""
+
+def sendCommand(command, duration):
+    url = f"{root_url}command?command={command}&duration={duration}"
+    success, response = sendRequest(url)
+    if success:
+        time.sleep((duration + 50) / 1000)  # Reduced delay after each command
+    return success
+
+def switchOnLED():
+    sendRequest(root_url + "switchLedOn")  # Allumer la LED
+
+def activateServo():
+    sendRequest(root_url + "catch")  # Abaisser le servomoteur (attraper)
+
+def moveForward(duration):
+    sendCommand("moveForward", duration)
+    time.sleep((duration + 50) / 1000)
+
+def moveBackward(duration):
+    sendCommand("moveBackward", duration)
+    time.sleep((duration + 50) / 1000)
+
+def turnLeft(duration):
+    sendCommand("turnLeft", duration)
+    time.sleep((duration + 50) / 1000)
+
+def turnRight(duration):
+    sendCommand("turnRight", duration)
+    time.sleep((duration + 50) / 1000)
+
+def case_to_duration(cases):
+    return int((cases / 26) * 1000)  # Duration in ms for given number of cases
+
+def generate_movements(coords):
+    nodes = []
+    movements = []
+    current_direction = None
+    distance_count = 0
+
+    for i in range(1, len(coords)):
+        x_diff = coords[i][0] - coords[i-1][0]
+        y_diff = coords[i][1] - coords[i-1][1]
+        new_direction = (x_diff, y_diff)
+
+        if new_direction == current_direction:
+            distance_count += 1
+        else:
+            if current_direction is not None:
+                duration = case_to_duration(distance_count)
+                moveForward(duration)
+                movements.append(f"avance de {distance_count} cases (durée: {duration} ms)")
+                nodes.append(coords[i-1])
+
+                if current_direction == (0, 1):  # moving up
+                    if new_direction == (1, 0):  # turning right
+                        turnRight(400)
+                        movements.append("tourne de 90° vers la droite (durée: 400 ms)")
+                    else:  # turning left
+                        turnLeft(400)
+                        movements.append("tourne de 90° vers la gauche (durée: 400 ms)")
+                elif current_direction == (1, 0):  # moving right
+                    if new_direction == (0, -1):  # turning down
+                        turnRight(400)
+                        movements.append("tourne de 90° vers la droite (durée: 400 ms)")
+                    else:  # turning up
+                        turnLeft(400)
+                        movements.append("tourne de 90° vers la gauche (durée: 400 ms)")
+                elif current_direction == (0, -1):  # moving down
+                    if new_direction == (-1, 0):  # turning left
+                        turnRight(400)
+                        movements.append("tourne de 90° vers la droite (durée: 400 ms)")
+                    else:  # turning right
+                        turnLeft(400)
+                        movements.append("tourne de 90° vers la gauche (durée: 400 ms)")
+                elif current_direction == (-1, 0):  # moving left
+                    if new_direction == (0, 1):  # turning up
+                        turnRight(400)
+                        movements.append("tourne de 90° vers la droite (durée: 400 ms)")
+                    else:  # turning down
+                        turnLeft(400)
+                        movements.append("tourne de 90° vers la gauche (durée: 400 ms)")
+
+            current_direction = new_direction
+            distance_count = 1
+
+    # Add the final movement
+    duration = case_to_duration(distance_count)
+    moveForward(duration)
+    movements.append(f"avance de {distance_count} cases (durée: {duration} ms)")
+    nodes.append(coords[-1])
+
+    return nodes, movements
+
+# Fonction pour lire les coordonnées depuis la console
+def read_coordinates():
+    coords = []
+    n = int(input("Combien de coordonnées allez-vous entrer ? "))
+    for _ in range(n):
+        x, y = map(int, input("Entrez les coordonnées (x y) : ").split())
+        coords.append((x, y))
+    return coords
+
+# Exemple d'utilisation
+coordinates = read_coordinates()
+nodes, movements = generate_movements(coordinates)
+print("Coordonnées des nœuds :", nodes)
+print("Séquence des mouvements :")
+for move in movements:
+    print(move)

@@ -1,0 +1,69 @@
+def case_to_duration(cases):
+    return int((cases / 26) * 1000)  # Duration in ms for given number of cases
+
+def generate_movements(coords):
+    nodes = []
+    movements = []
+    current_direction = None
+    distance_count = 0
+
+    for i in range(1, len(coords)):
+        x_diff = coords[i][0] - coords[i-1][0]
+        y_diff = coords[i][1] - coords[i-1][1]
+        new_direction = (x_diff, y_diff)
+
+        if new_direction == current_direction:
+            distance_count += 1
+        else:
+            if current_direction is not None:
+                duration = case_to_duration(distance_count)
+                movements.append(f"moveForward({duration})")
+                nodes.append(coords[i-1])
+
+                if current_direction == (0, 1):  # moving up
+                    if new_direction == (1, 0):  # turning right
+                        movements.append("turnRight(400)")
+                    else:  # turning left
+                        movements.append("turnLeft(400)")
+                elif current_direction == (1, 0):  # moving right
+                    if new_direction == (0, -1):  # turning down
+                        movements.append("turnRight(400)")
+                    else:  # turning up
+                        movements.append("turnLeft(400)")
+                elif current_direction == (0, -1):  # moving down
+                    if new_direction == (-1, 0):  # turning left
+                        movements.append("turnRight(400)")
+                    else:  # turning right
+                        movements.append("turnLeft(400)")
+                elif current_direction == (-1, 0):  # moving left
+                    if new_direction == (0, 1):  # turning up
+                        movements.append("turnRight(400)")
+                    else:  # turning down
+                        movements.append("turnLeft(400)")
+
+            current_direction = new_direction
+            distance_count = 1
+
+    # Add the final movement
+    duration = case_to_duration(distance_count)
+    movements.append(f"moveForward({duration})")
+    nodes.append(coords[-1])
+
+    return nodes, movements
+
+# Fonction pour lire les coordonnées depuis la console
+def read_coordinates():
+    coords = []
+    n = int(input("Combien de coordonnées allez-vous entrer ? "))
+    for _ in range(n):
+        x, y = map(int, input("Entrez les coordonnées (x y) : ").split())
+        coords.append((x, y))
+    return coords
+
+# Exemple d'utilisation
+coordinates = read_coordinates()
+nodes, movements = generate_movements(coordinates)
+print("Coordonnées des nœuds :", nodes)
+print("Séquence des mouvements :")
+for move in movements:
+    print(move)
