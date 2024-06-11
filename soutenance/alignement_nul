@@ -1,0 +1,205 @@
+import numpy as np
+import time
+import cv2
+
+ARUCO_DICT = {
+    "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
+}
+
+# Constantes
+DISTANCE_COIN_ARUCO_X_MM = 2940
+DISTANCE_COIN_Y_MM = 1940
+
+TAILLE_ARUCO_COIN = 100
+LONGUEUR_CALIBRATION = 90
+
+IMAGE_LONGUEUR = 1920
+IMAGE_LARGEUR = 1080
+
+CONSTANTE_RECADRAGE = 10
+IMAGE_RECADRE_LONGUEUR = 1600
+IMAGE_RECADRE_LARGEUR = 900
+
+RADIUS_ROBOT = 100
+
+
+
+def coordrobot(corners, ids):
+    x_robot = y_robot = None  # Initialize with None to handle cases where the marker isn't detected
+    if len(corners) < 1:
+        return None, None  # Early return if there are no corners to process
+    index_robot = np.where(ids == 137)[0]
+    if index_robot.size > 0:
+        # Calculate the center of the ArUco marker
+        marker_corners = corners[index_robot[0]][0]
+        x_robot = np.mean(marker_corners[:, 0])
+        y_robot = np.mean(marker_corners[:, 1])
+    return x_robot, y_robot
+
+
+def aruco_display(corners, ids, image):
+    if len(corners) > 0:
+        ids = ids.flatten()
+
+        for (markerCorner, markerID) in zip(corners, ids):
+            corners = markerCorner.reshape((4, 2))
+
+            (topLeft, topRight, bottomRight, bottomLeft) = corners
+
+            topRight = (int(topRight[0]), int(topRight[1]))
+            bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
+            bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
+            topLeft = (int(topLeft[0]), int(topLeft[1]))
+
+            cv2.line(image, topLeft, topRight, (0, 255, 0), 2)
+            cv2.line(image, topRight, bottomRight, (0, 255, 0), 2)
+            cv2.line(image, bottomRight, bottomLeft, (0, 255, 0), 2)
+            cv2.line(image, bottomLeft, topLeft, (0, 255, 0), 2)
+
+            cX = int((topLeft[0] + bottomRight[0]) / 2.0)
+            cY = int((topLeft[1] + bottomRight[1]) / 2.0)
+
+            # Map ArUco marker coordinates to game card coordinates
+            if markerID == 0:
+                mapped_coordinates = (topLeft[0], topLeft[1])
+                cv2.circle(image, mapped_coordinates, 4, (0, 0, 255), -1)
+            elif markerID == 1:
+                mapped_coordinates = (topRight[0], topRight[1])
+                cv2.circle(image, mapped_coordinates, 4, (0, 0, 255), -1)
+            elif markerID == 2:
+                mapped_coordinates = (bottomRight[0], bottomRight[1])
+                cv2.circle(image, mapped_coordinates, 4, (0, 0, 255), -1)
+            elif markerID == 3:
+                mapped_coordinates = (bottomLeft[0], bottomLeft[1])
+                cv2.circle(image, mapped_coordinates, 4, (0, 0, 255), -1)
+            else:
+                mapped_coordinates = (cX, cY)
+                cv2.circle(image, (cX, cY), 4, (0, 0, 255), -1)
+
+            cv2.putText(image, "ID: {}".format(markerID), (topLeft[0], topLeft[1] - 10), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5, (0, 255, 0), 2)
+
+            # Display mapped coordinates on the image
+            cv2.putText(image, "Mapped: ({},{})".format(mapped_coordinates[0], mapped_coordinates[1]),
+                        (topLeft[0], topLeft[1] - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            # Print mapped coordinates in the console
+            print("[Inference] ArUco marker ID: {}, Mapped Coordinates: {}".format(markerID, mapped_coordinates))
+
+    return image
+
+
+def orientation_Aruco(corners, image, markerID, only_ids=None):
+    if only_ids is not None and markerID not in only_ids:
+        return image
+
+    # Calculate the center of the ArUco marker
+    center = np.mean(corners, axis=0).astype(int)
+
+    # Calculate midpoints of each side of the ArUco marker
+    top_midpoint = np.mean([corners[0], corners[1]], axis=0)
+    right_midpoint = np.mean([corners[1], corners[2]], axis=0)
+    bottom_midpoint = np.mean([corners[2], corners[3]], axis=0)
+    left_midpoint = np.mean([corners[3], corners[0]], axis=0)
+
+    # Vectors pointing from the center to each midpoint
+    vector_up = top_midpoint - center
+    vector_right = right_midpoint - center
+    vector_down = bottom_midpoint - center
+    vector_left = left_midpoint - center
+
+    # Normalize and scale to arrow length
+    arrow_length = 50
+    vector_up = vector_up / np.linalg.norm(vector_up) * arrow_length
+    vector_right = vector_right / np.linalg.norm(vector_right) * arrow_length
+    vector_down = vector_down / np.linalg.norm(vector_down) * arrow_length
+    vector_left = vector_left / np.linalg.norm(vector_left) * arrow_length
+
+
+    # Drawing arrows for each direction
+    center_tuple = tuple(center.astype(int))
+    cv2.arrowedLine(image, center_tuple, tuple(center + vector_up.astype(int)), (0, 255, 0), 2)  # Forward (Green)
+    cv2.line(image, center_tuple, tuple(center + vector_right.astype(int)), (255, 0, 0), 2)  # Right (Red)
+    cv2.line(image, center_tuple, tuple(center + vector_down.astype(int)), (0, 0, 255), 2)  # Back (Blue)
+    cv2.line(image, center_tuple, tuple(center + vector_left.astype(int)), (150, 50, 150), 2)  # Left (Violet)
+
+    cv2.circle(image, center_tuple, 4, (255, 255, 255), -1)
+
+
+    # On va faire un rectangle qui penche donc j'utilise des lignes
+    pt1 = tuple(corners[0].astype(int))
+    pt2 = tuple((corners[1]).astype(int))
+    pt3 = tuple((corners[1] + vector_up).astype(int))
+    pt4 = tuple((corners[0] + vector_up).astype(int))
+
+    # Dessin recangle pour box
+    cv2.line(image, pt1, pt2, (120, 100, 200), 2)
+    cv2.line(image, pt2, pt3, (120, 100, 200), 2)
+    cv2.line(image, pt3, pt4, (120, 100, 200), 2)
+    cv2.line(image, pt4, pt1, (120, 100, 200), 2)
+
+
+
+    # Calculate the orientation angle if the ID matches
+    if markerID in only_ids:
+        north = np.array([0, -1])
+        angle = np.degrees(np.arctan2(vector_up[1], vector_up[0]))
+        angle = (angle + 360) % 360  # Normalize angle
+        text_position = (675, 50)  # Position at the top of the image
+        # Dessiner le rectangle si le marqueur correspond à l'ID du robot
+
+        cv2.putText(image, f"Orientation: {angle:.2f}", text_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+
+    return image
+
+
+only_draw_ids = [137, 392]  # IDs for which we want to draw the arrows and orientation
+
+aruco_type = "DICT_ARUCO_ORIGINAL"
+
+arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[aruco_type])
+
+arucoParams = cv2.aruco.DetectorParameters()
+
+
+cap = cv2.VideoCapture(1)
+
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMAGE_LONGUEUR)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMAGE_LARGEUR)
+
+while cap.isOpened():
+
+    ret, img = cap.read()
+
+    h, w, _ = img.shape
+    print("Lecture d'image réussie. Shape: {}".format((h, w)))
+
+    # -------------------------------RECUPERATION PREMIERE IMAGE ET DETECTION DES COINS----------------------------------
+
+    detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
+    corners, ids, rejected = detector.detectMarkers(img)
+
+
+
+    x_robot, y_robot = coordrobot(corners, ids)
+
+
+    # Check if coordinates are not None and draw the circle
+    if x_robot is not None and y_robot is not None:
+        cv2.circle(img, (int(x_robot), int(y_robot)), RADIUS_ROBOT,
+                   (234, 158, 236), 3)
+    else:
+        print("ArUco marker 137 not detected.")
+
+    if ids is not None:
+        for markerCorner, markerID in zip(corners, ids.flatten()):
+            img = orientation_Aruco(markerCorner.reshape((4, 2)), img, markerID, only_draw_ids)
+
+    cv2.imshow("Image recadre", img)
+
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord("q"):
+        break
+
+cv2.destroyAllWindows()
+cap.release()

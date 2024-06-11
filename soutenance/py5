@@ -1,0 +1,63 @@
+import time
+import urllib.request
+
+root_url = "http://192.168.86.71/"
+
+def sendRequest(url, retries=3, timeout=5):
+    attempt = 0
+    while attempt < retries:
+        try:
+            response = urllib.request.urlopen(url, timeout=timeout)
+            response_text = response.read().decode()
+            print(response_text)
+            return True, response_text
+        except Exception as e:
+            attempt += 1
+            print(f"Attempt {attempt} failed: {e}")
+            time.sleep(0.5)  # Reduced sleep time between retries
+    print(f"Failed to send request to {url} after {retries} attempts.")
+    sendCommand("stop", 0)  # Stop the motors for safety
+    return False, ""
+
+def sendCommand(command, duration):
+    url = f"{root_url}command?command={command}&duration={duration}"
+    success, response = sendRequest(url)
+    if success:
+        time.sleep((duration + 50) / 1000)  # Reduced delay after each command
+    return success
+
+def switchOnLED():
+    sendRequest(root_url + "switchLedOn")  # Allumer la LED
+
+def activateServo():
+    sendRequest(root_url + "catch")  # Abaisser le servomoteur (attraper)
+
+def moveForward(duration):
+    sendCommand("moveForward", duration)
+    time.sleep((duration + 50) / 1000)
+
+def moveBackward(duration):
+    sendCommand("moveBackward", duration)
+    time.sleep((duration + 50) / 1000)
+
+def turnLeft(duration):
+    sendCommand("turnLeft", duration)
+    time.sleep((duration + 50) / 1000)
+
+def turnRight(duration):
+    sendCommand("turnRight", duration)
+    time.sleep((duration + 50) / 1000)
+
+def executeTrajectory():
+    move_duration = 1000
+    # speed : 26 cm/s
+    turn_duration = 820
+    # 360° = 1600 / 180° = 800 / 90° = 410
+
+    for i in range(1):
+       moveForward(move_duration)
+       # turnRight(turn_duration)
+
+    #activateServo()
+
+executeTrajectory()
